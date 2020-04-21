@@ -54,8 +54,8 @@ class PGVAE:
 
         # create dataset 
         data = self.generator.generate_latents(num_samples=100)
-        dataset = dataset.get_dataset(data,batch_size)
-        train_dist_dataset = strategy.experimental_distribute_dataset(dataset)
+        ds = dataset.get_dataset(data,batch_size)
+        train_dist_dataset = strategy.experimental_distribute_dataset(ds)
 
         # Training loops
         with strategy.scope():
@@ -117,10 +117,12 @@ class PGVAE:
 
         for i, resolution in enumerate(resolutions):
             print('Processing step {}: resolution {} with max resolution {}'.format(i,resolution,stop_res),flush=True)
+            
+            self.add_resolution()
+
             batch_size = self.get_batchsize()
             epochs = self.get_epochs()
 
-            self.add_resolution()
             self.train_resolution(batch_size,epochs,save_folder)
 
 
