@@ -56,7 +56,8 @@ class Encoder:
         return tf.keras.models.Sequential(block_layers, name=name)
 
     def _weighted_sum(self):
-        return tf.keras.layers.Lambda(lambda inputs : (1-inputs[2])*inputs[0] + (inputs[2])*inputs[1])
+        #return tf.keras.layers.Lambda(lambda inputs : (1-inputs[2])*inputs[0] + (inputs[2])*inputs[1])
+        return tf.keras.layers.Lambda(lambda inputs : (inputs[2])*inputs[1])
 
     def add_resolution(self):
         
