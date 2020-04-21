@@ -89,7 +89,7 @@ class Encoder:
 
         # Getting latent code 
         #block_output = e_block(lerp_input)
-        e_output = self.growing_encoder(lerp_input)
+        [e_mu,e_sigma] = self.growing_encoder(lerp_input)
 
         # Updating the model
         self.growing_encoder = tf.keras.Sequential([e_block,self.growing_encoder]) # without channel compression
