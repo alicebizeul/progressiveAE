@@ -45,6 +45,7 @@ class Encoder:
         return tf.keras.models.Model(inputs=[images], outputs=[mu,sigma], name='mu_sigma')
 
     def make_Eblock(self,name,filters):
+        print(filters)
 
         # on fait cette approche car on ne sait pas la taille donc on met pas un input
         block_layers = []
@@ -78,7 +79,7 @@ class Encoder:
 
         # Channel compression
         from_rgb_1 = tf.keras.layers.AveragePooling3D()(images)
-        from_rgb_1 = tf.keras.layers.Conv3D(self._nf(self.current_resolution)-1, kernel_size=1, padding='same', name='from_rgb_1')(from_rgb_1)
+        from_rgb_1 = tf.keras.layers.Conv3D(self._nf(self.current_resolution-1), kernel_size=1, padding='same', name='from_rgb_1')(from_rgb_1)
 
         from_rgb_2 = tf.keras.layers.Conv3D(self._nf(self.current_resolution), kernel_size=1, padding='same', name='from_rgb_2')(images)
         from_rgb_2 = e_block(from_rgb_2)
