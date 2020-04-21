@@ -45,7 +45,7 @@ class Encoder:
         return tf.keras.models.Model(inputs=[images], outputs=[mu,sigma], name='mu_sigma')
 
     def make_Eblock(self,name,nf):
-        print(filters)
+        print(nf)
 
         # on fait cette approche car on ne sait pas la taille donc on met pas un input
         block_layers = []
@@ -75,7 +75,7 @@ class Encoder:
 
         # Compression block
         name = 'block_{}'.format(self.current_resolution)
-        e_block = self.make_Eblock(name=name,filters=self._nf(self.current_resolution-1))
+        e_block = self.make_Eblock(name=name,nf=self._nf(self.current_resolution-1))
 
         # Channel compression
         from_rgb_1 = tf.keras.layers.AveragePooling3D()(images)
@@ -95,7 +95,7 @@ class Encoder:
         self.growing_encoder = tf.keras.Sequential([e_block,self.growing_encoder]) # without channel compression
         self.train_encoder = tf.keras.Model(inputs=[images],outputs=[e_output]) # with channel compression
         print(self.train_encoder.summary())
-        print(self.growing_encoder.summary())
+      
 class Decoder(): 
 
     def __init__(self, latent_size, generator_folder):
