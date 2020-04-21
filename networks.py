@@ -19,7 +19,7 @@ class Encoder:
         # dynamic parameters
         self.current_resolution = 1
         self.current_width = 2 ** self.current_resolution
-        self.growing_encoder = self.make_Ebase()
+        self.growing_encoder = self.make_Ebase(nf=self._nf(1))
         self.train_encoder = self.growing_encoder
     
     def update_res(self):
