@@ -26,7 +26,15 @@ def parse_image(serialized):
 
     return image
 
-def get_dataset(tf_folder,batch_size):
+def get_dataset(data,batch_size):
+
+    dataset = tf.data.Dataset.from_tensor_slices(data)
+    #dataset = dataset.map(lambda x: parse_image(x), num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    dataset = dataset.batch(batch_size, drop_remainder=True)
+    dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    return dataset
+
+def get_tf_dataset(tf_folder,batch_size):
 
     tffolder = Path(tf_folder)
     num_parallel_calls = tf.data.experimental.AUTOTUNE
@@ -40,8 +48,7 @@ def get_dataset(tf_folder,batch_size):
     )
 
     # extracting data
-    dataset = dataset.map(lambda x: parse_image(x), 
-                num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    dataset = dataset.map(lambda x: parse_image(x),num_parallel_calls=tf.data.experimental.AUTOTUNE)
     dataset = dataset.batch(batch_size, drop_remainder=True)
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 

@@ -19,7 +19,7 @@ class PGVAE:
         self.current_resolution = 1
         self.current_width = 2**self.current_resolution
         self.res_batch = {2:128,4:64,8:32,16:16,32:8,64:4,128:2,256:1}
-        self.res_epoch = {4:20,8:40,16:60,32:80,64:100,128:200,256:400}
+        self.res_epoch = {2:10,4:20,8:40,16:60,32:80,64:100,128:200,256:400}
 
         self.generate = True
         self.strategy = True
@@ -37,11 +37,12 @@ class PGVAE:
         self.decoder.add_resolution() 
 
     def get_batchsize(self):
-        return self.res_batch[self.current_resolution-1]
+        return self.res_batch[self.current_resolution]
 
-    def train_resolution(self,tf_folder,batch_size,epochs,save_folder):
+    def get_epochs(self):
+        return self.res_epoch[self.current_resolution]
 
-        if self.generate : self.generator.generate_samples(10,tf_folder) # for the moment dataset = images, TO DO datasets = latents
+    def train_resolution(self,batch_size,epochs,save_folder):
 
         strategy = tf.distribute.MirroredStrategy()
         print ('Number of devices: {}'.format(strategy.num_replicas_in_sync),flush=True)
@@ -51,9 +52,10 @@ class PGVAE:
         savefolder = Path(save_folder)
         checkpoint_prefix = savefolder.joinpath("vae{}.ckpt".format(self.current_resolution))
 
-        # paralellize the dataset 
-        tfdataset = dataset.get_dataset(tf_folder,batch_size)
-        train_dist_dataset = strategy.experimental_distribute_dataset(tfdataset)
+        # create dataset 
+        data = self.generator.generate_latents(num_samples=100)
+        dataset = dataset.get_dataset(data,batch_size)
+        train_dist_dataset = strategy.experimental_distribute_dataset(dataset)
 
         # Training loops
         with strategy.scope():
@@ -106,9 +108,7 @@ class PGVAE:
         #Save the model and the history
         self.encoder.train_encoder.save(savefolder.joinpath('e{}.h5'.format(self.current_resolution)))
 
-        return 1
-
-    def train(self,tf_folder,stop_res,epochs,save_folder,start_res=2):
+    def train(self,stop_res,save_folder,start_res=2):
 
         start_stage = math.log(2,2)
         stop_stage = math.log(stop_res,2) # check if multiple of 2
@@ -118,9 +118,10 @@ class PGVAE:
         for i, resolution in enumerate(resolutions):
             print('Processing step {}: resolution {} with max resolution {}'.format(i,resolution,stop_res),flush=True)
             batch_size = self.get_batchsize()
+            epochs = self.get_epochs()
 
             self.add_resolution()
-            self.train_resolution(tf_folder,batch_size,epochs,save_folder)
+            self.train_resolution(batch_size,epochs,save_folder)
 
 
 
