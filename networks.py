@@ -26,9 +26,9 @@ class Encoder:
         self.current_resolution += 1
         self.current_width = 2 ** self.current_resolution
 
-    def make_Ebase(self):
+    def make_Ebase(self,nf):
 
-        images = tf.keras.layers.Input(shape= (2,)*self.dimensionality + (512,), name='images_2iso')
+        images = tf.keras.layers.Input(shape= (2,)*self.dimensionality + (nf,), name='images_2iso')
 
         # Final dense layer
         x = tf.keras.layers.Flatten()(images)
@@ -44,16 +44,16 @@ class Encoder:
 
         return tf.keras.models.Model(inputs=[images], outputs=[mu,sigma], name='mu_sigma')
 
-    def make_Eblock(self,name,filters):
+    def make_Eblock(self,name,nf):
         print(filters)
 
         # on fait cette approche car on ne sait pas la taille donc on met pas un input
         block_layers = []
 
-        block_layers.append(tf.keras.layers.Convolution3D(filters, kernel_size=3, strides=1, padding='same'))
+        block_layers.append(tf.keras.layers.Convolution3D(nf, kernel_size=3, strides=1, padding='same'))
         block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu))
 
-        block_layers.append(tf.keras.layers.Convolution3D(filters, kernel_size=3, strides=2, padding='same')) # check padding
+        block_layers.append(tf.keras.layers.Convolution3D(nf, kernel_size=3, strides=2, padding='same')) # check padding
         block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu))
 
         return tf.keras.models.Sequential(block_layers, name=name)
@@ -81,6 +81,7 @@ class Encoder:
         from_rgb_1 = tf.keras.layers.AveragePooling3D()(images)
         from_rgb_1 = tf.keras.layers.Conv3D(self._nf(self.current_resolution-1), kernel_size=1, padding='same', name='from_rgb_1')(from_rgb_1)
 
+        print(self._nf(self.current_resolution))
         from_rgb_2 = tf.keras.layers.Conv3D(self._nf(self.current_resolution), kernel_size=1, padding='same', name='from_rgb_2')(images)
         from_rgb_2 = e_block(from_rgb_2)
 
