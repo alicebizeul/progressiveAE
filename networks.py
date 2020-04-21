@@ -78,7 +78,7 @@ class Encoder:
         from_rgb_2 = tf.keras.layers.Conv3D(512, kernel_size=1, padding='same', name='from_rgb_2')(images)
         from_rgb_2 = e_block(from_rgb_2)
 
-        lerp_input = self._weighted_sum()([from_rgb_1, from_rgb_2, 2]) # RANDOM ALPHA
+        lerp_input = self._weighted_sum()([from_rgb_1, from_rgb_2, tf.constant(2,dtype=tf.float32)]) # RANDOM ALPHA
 
         # Getting latent code 
         block_output = e_block(lerp_input)
