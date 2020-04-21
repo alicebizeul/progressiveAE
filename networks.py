@@ -26,7 +26,7 @@ class Encoder:
 
     def make_Ebase(self):
 
-        images = tf.keras.layers.Input(shape= (2)*self.dimensionality + (512), name='images_2iso')
+        images = tf.keras.layers.Input(shape= (2,)*self.dimensionality + (512,), name='images_2iso')
 
         # Final dense layer
         x = tf.keras.layers.Flatten(images)
@@ -64,10 +64,10 @@ class Encoder:
         self.update_res()
 
         # Gan images
-        images = tf.keras.layers.Input(shape=(self.current_width)*self.dimensionality+ (self.num_channels,),name = 'GAN images')
+        images = tf.keras.layers.Input(shape=(self.current_width,)*self.dimensionality+ (self.num_channels,),name = 'GAN_images')
 
         # Compression block
-        name = 'block {}'.format(self.current_resolution)
+        name = 'block_{}'.format(self.current_resolution)
         e_block = self.make_Eblock(name=name)
 
         # Channel compression - QUESTION

@@ -18,7 +18,8 @@ class PGVAE:
 
         self.current_resolution = 1
         self.current_width = 2**self.current_resolution
-        self.res_batch = [128,64,32,16,8,4,2,1]
+        self.res_batch = {2:128,4:64,8:32,16:16,32:8,64:4,128:2,256:1}
+        self.res_epoch = {4:20,8:40,16:60,32:80,64:100,128:200,256:400}
 
         self.generate = True
         self.strategy = True
@@ -85,7 +86,7 @@ class PGVAE:
                 return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None) # axis
 
         # Start training.
-        for epoch in range(epochs):
+        for epoch in range(self.res_epoch[self.current_resolution]):
             print('Starting the training : epoch {}'.format(epoch),flush=True)
             total_loss = 0.0
             num_batches = 0
