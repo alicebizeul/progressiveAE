@@ -32,9 +32,9 @@ class PGVAE:
 
     def add_resolution(self):
         self.update_res()
-        self.generator.add_resolution()
+        if self.current_resolution > 2: self.generator.add_resolution()
         self.encoder.add_resolution()
-        self.decoder.add_resolution() 
+        if self.current_resolution > 2: self.decoder.add_resolution() 
 
     def get_batchsize(self):
         return self.res_batch[self.current_resolution]
@@ -116,7 +116,7 @@ class PGVAE:
         resolutions = [2**x for x in np.arange(start_stage+1,stop_stage+1)]
 
         for i, resolution in enumerate(resolutions):
-            print('Processing step {}: resolution {} with max resolution {}'.format(i,resolution,stop_res),flush=True)
+            print('Processing step {}: resolution {} with max resolution {}'.format(i,resolution,resolutions[-1]),flush=True)
             
             self.add_resolution()
 
