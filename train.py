@@ -32,9 +32,9 @@ class PGVAE:
 
     def add_resolution(self):
         self.update_res()
-        if self.current_resolution > 2: self.generator.add_resolution()
+        self.generator.add_resolution()
         self.encoder.add_resolution()
-        if self.current_resolution > 2: self.decoder.add_resolution() 
+        self.decoder.add_resolution() 
 
     def get_batchsize(self):
         return self.res_batch[self.current_resolution]

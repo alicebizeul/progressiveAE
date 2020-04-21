@@ -121,8 +121,9 @@ class Decoder():
 
     def add_resolution(self):
         self.update_res()
-        self.decoder = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)
-        self.decoder.trainable = False
+        if self.current_resolution > 2:
+            self.decoder = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)
+            self.decoder.trainable = False
 
     def get_decoder(self):
         return self.decoder
@@ -162,8 +163,9 @@ class Generator():
 
     def add_resolution(self):
         self.update_res()
-        self.generator = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)
-        self.generator.trainable = False
+        if self.current_resolution > 2:
+            self.generator = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)
+            self.generator.trainable = False
 
     def generate_latents(self,num_samples):
         # TO DO : instead of storing images, use latents, no need to store in TFRecords
