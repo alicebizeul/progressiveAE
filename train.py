@@ -123,7 +123,7 @@ class PGVAE:
             batch_size = self.get_batchsize()
             epochs = self.get_epochs()
 
-            self.train_resolution(batch_size,epochs,save_folder)
+            if self.current_resolution > 2: self.train_resolution(batch_size,epochs,save_folder)
 
 
 
