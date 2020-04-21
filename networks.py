@@ -113,7 +113,7 @@ class Decoder():
 
     def add_resolution(self):
         self.update_res()
-        self.decoder = tf.saved_model.load(self.get_model(self.model_folder,self.current_resolution))
+        self.decoder = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)
         self.decoder.trainable = False
 
     def get_decoder(self):
