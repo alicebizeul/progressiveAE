@@ -105,7 +105,7 @@ class Decoder():
     def get_model(self,folder,res):
         # find the model for the appropriate resolution
         path = Path(folder)
-        return str(path.glob('g_{}.h5'.format(res)))
+        return str(list(path.glob('g_{}.h5'.format(res)))[0].resolve()) # check if single one
 
     def update_res(self):
         self.current_resolution += 1
