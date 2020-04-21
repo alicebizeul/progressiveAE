@@ -148,11 +148,11 @@ class Generator():
         # find the model for the appropriate resolution
         path = Path(folder)
         print([x for x in path.iterdir()])
-        print(list(path.glob('g_3.h5')))
-        print(list(path.glob('g_{}.h5'.format(res))))
+        print(list(path.glob('**/g_3.h5')))
+        print(list(path.glob('**/g_{}.h5'.format(res))))
         try:
             print(str(list(path.glob('g_{}.h5'.format(res)))[0].resolve()))
-            return str(list(path.glob('g_{}.h5'.format(res)))[0].resolve())
+            return str(list(path.glob('**/g_{}.h5'.format(res)))[0].resolve())
         except: print('No pretrained model for this resolution')
 
     def update_res(self):
