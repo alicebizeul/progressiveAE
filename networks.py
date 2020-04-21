@@ -100,7 +100,7 @@ class Decoder():
         # dynamic parameters
         self.current_resolution = 1
         self.current_width = 2** self.current_resolution
-        self.decoder = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)
+        self.decoder = None
 
     def get_model(self,folder,res):
         # find the model for the appropriate resolution
@@ -134,7 +134,7 @@ class Generator():
         # dynamic 
         self.current_resolution = 1
         self.current_width = 2**3
-        self.generator = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)
+        self.generator = None
 
     def get_model(self,folder,res):
         # find the model for the appropriate resolution
