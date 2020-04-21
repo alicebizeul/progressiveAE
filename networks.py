@@ -26,7 +26,7 @@ class Encoder:
 
     def make_Ebase(self):
 
-        images = tf.keras.layers.Input(shape= (2)*self.dimensionality + (512), name='images 2iso')
+        images = tf.keras.layers.Input(shape= (2)*self.dimensionality + (512), name='images_2iso')
 
         # Final dense layer
         x = tf.keras.layers.Flatten(images)

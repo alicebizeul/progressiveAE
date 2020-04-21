@@ -65,7 +65,7 @@ class PGVAE:
                     
                     # Forward pass
                     mu,sigma = self.encoder.train_encoder(inputs,training=True)
-                    latent_code = tfp.distributions.Normal(loc=mu, scale=sigma)
+                    latent_code = tfp.distributions.Normal(loc=mu, scale=sigma) / tfd.MultivariateNormalDiag(loc, scale)/tfd = tf.contrib.distributions
                     reconst_images = self.decoder.decoder(latent_code,training=False)
 
                     # Compute the ELBO loss for VAE training 
