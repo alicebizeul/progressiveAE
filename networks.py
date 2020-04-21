@@ -29,7 +29,7 @@ class Encoder:
         images = tf.keras.layers.Input(shape= (2,)*self.dimensionality + (512,), name='images_2iso')
 
         # Final dense layer
-        x = tf.keras.layers.Flatten(images)
+        x = tf.keras.layers.Flatten()(images)
         x = tf.keras.layers.Dense(self.latent_size*2)(x)
         # ADD ACTIVATION AND DENSE ??? 
 
@@ -40,7 +40,7 @@ class Encoder:
         # Latent code - computed for loss evaluation
         #z = tensorflow_probability.distributions.Normal(loc=mu, scale=sigma)
 
-        return tf.keras.models.Model(inputs=[images], outputs=[mu,sigma], name='generator_base')
+        return tf.keras.models.Model(inputs=[images], outputs=[mu,sigma], name='mu_sigma')
 
     def make_Eblock(self,name):
 
@@ -71,7 +71,7 @@ class Encoder:
         e_block = self.make_Eblock(name=name)
 
         # Channel compression - QUESTION
-        from_rgb_1 = tf.keras.layers.AveragePooling3D(images)
+        from_rgb_1 = tf.keras.layers.AveragePooling3D()(images)
         from_rgb_1 = tf.keras.layers.Conv3D(512, kernel_size=1, padding='same', name='from_rgb_1')(from_rgb_1)
 
         from_rgb_2 = tf.keras.layers.Conv3D(512, kernel_size=1, padding='same', name='from_rgb_2')(images)
