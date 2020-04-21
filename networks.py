@@ -11,7 +11,7 @@ class Encoder:
 
         # static parameters 
         self.latent_size = latent_size
-        self.num_channels = 3
+        self.num_channels = 1
         self.dimensionality = 3
 
         # dynamic parameters
@@ -56,8 +56,7 @@ class Encoder:
         return tf.keras.models.Sequential(block_layers, name=name)
 
     def _weighted_sum(self):
-        #return tf.keras.layers.Lambda(lambda inputs : (1-inputs[2])*inputs[0] + (inputs[2])*inputs[1])
-        return tf.keras.layers.Lambda(lambda inputs : (inputs[2])*inputs[1])
+        return tf.keras.layers.Lambda(lambda inputs : (1-inputs[2])*inputs[0] + (inputs[2])*inputs[1])
 
     def add_resolution(self):
         
@@ -81,14 +80,14 @@ class Encoder:
         lerp_input = self._weighted_sum()([from_rgb_1, from_rgb_2, tf.constant(2,dtype=tf.float32)]) # RANDOM ALPHA
 
         # Getting latent code 
-        block_output = e_block(lerp_input)
-        e_output = self.growing_encoder(block_output)
+        #block_output = e_block(lerp_input)
+        e_output = self.growing_encoder(lerp_input)
 
         # Updating the model
         self.growing_encoder = tf.keras.Sequential([e_block,self.growing_encoder]) # without channel compression
         self.train_encoder = tf.keras.Model(inputs=[images],outputs=[e_output]) # with channel compression
-
-
+        print(self.train_encoder.summary())
+        print(self.growing_encoder.summary())
 class Decoder(): 
 
     def __init__(self, latent_size, generator_folder):
