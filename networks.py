@@ -13,6 +13,8 @@ class Encoder:
         self.latent_size = latent_size
         self.num_channels = 1
         self.dimensionality = 3
+        self.fmap_base = 512
+        self.fmap_max = 8192
 
         # dynamic parameters
         self.current_resolution = 1
@@ -42,18 +44,22 @@ class Encoder:
 
         return tf.keras.models.Model(inputs=[images], outputs=[mu,sigma], name='mu_sigma')
 
-    def make_Eblock(self,name):
+    def make_Eblock(self,name,filters):
 
         # on fait cette approche car on ne sait pas la taille donc on met pas un input
         block_layers = []
 
-        block_layers.append(tf.keras.layers.Convolution3D(512, kernel_size=3, strides=1, padding='same'))
+        block_layers.append(tf.keras.layers.Convolution3D(filters, kernel_size=3, strides=1, padding='same'))
         block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu))
 
-        block_layers.append(tf.keras.layers.Convolution3D(512, kernel_size=3, strides=2, padding='same')) # check padding
+        block_layers.append(tf.keras.layers.Convolution3D(filters, kernel_size=3, strides=2, padding='same')) # check padding
         block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu))
 
         return tf.keras.models.Sequential(block_layers, name=name)
+
+    def _nf(self, stage): 
+        # computes number of filters for each layer
+        return min(int(self.fmap_base / (2.0 ** (stage))), self.fmap_max)
 
     def _weighted_sum(self):
         return tf.keras.layers.Lambda(lambda inputs : (1-inputs[2])*inputs[0] + (inputs[2])*inputs[1])
@@ -68,13 +74,13 @@ class Encoder:
 
         # Compression block
         name = 'block_{}'.format(self.current_resolution)
-        e_block = self.make_Eblock(name=name)
+        e_block = self.make_Eblock(name=name,filters=self._nf(self.current_resolution-1))
 
-        # Channel compression - QUESTION
+        # Channel compression
         from_rgb_1 = tf.keras.layers.AveragePooling3D()(images)
-        from_rgb_1 = tf.keras.layers.Conv3D(512, kernel_size=1, padding='same', name='from_rgb_1')(from_rgb_1)
+        from_rgb_1 = tf.keras.layers.Conv3D(self._nf(self.current_resolution)-1, kernel_size=1, padding='same', name='from_rgb_1')(from_rgb_1)
 
-        from_rgb_2 = tf.keras.layers.Conv3D(512, kernel_size=1, padding='same', name='from_rgb_2')(images)
+        from_rgb_2 = tf.keras.layers.Conv3D(self._nf(self.current_resolution), kernel_size=1, padding='same', name='from_rgb_2')(images)
         from_rgb_2 = e_block(from_rgb_2)
 
         lerp_input = self._weighted_sum()([from_rgb_1, from_rgb_2, tf.constant(2,dtype=tf.float32)]) # RANDOM ALPHA
