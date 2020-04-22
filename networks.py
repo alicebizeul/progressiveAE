@@ -4,7 +4,7 @@ import numpy as np
 import dataset
 
 
-class Encoder:
+class VEncoder:
 
     def __init__(self, latent_size):
         super(Encoder, self).__init__()
@@ -113,6 +113,99 @@ class Encoder:
         # Updating the model
         self.growing_encoder = tf.keras.Sequential([e_block,self.growing_encoder]) # without channel compression
         self.train_encoder = tf.keras.Model(inputs=[images],outputs=[e_mu]) # with channel compression
+        print(self.train_encoder.summary())
+
+class Encoder:
+
+    def __init__(self, latent_size):
+        super(Encoder, self).__init__()
+
+        # static parameters 
+        self.latent_size = latent_size
+        self.num_channels = 1
+        self.dimensionality = 3
+        self.fmap_base = 512
+        self.fmap_max = 8192
+
+        # dynamic parameters
+        self.current_resolution = 1
+        self.current_width = 2 ** self.current_resolution
+        self.growing_encoder = self.make_Ebase(nf=self._nf(1))
+        self.train_encoder = self.growing_encoder
+
+        #tmp
+        self.tmp3 = None
+    
+    def update_res(self):
+        self.current_resolution += 1
+        self.current_width = 2 ** self.current_resolution
+
+    def make_Ebase(self,nf):
+
+        # 2x2x2 images
+        images = tf.keras.layers.Input(shape= (2,)*self.dimensionality + (nf,), name='images_2iso')
+
+        # Final dense layer
+        x = tf.keras.layers.Flatten()(images)
+        x = tf.keras.layers.Dense(self.latent_size)(x)
+
+        # ADD ACTIVATION AND DENSE ??? 
+        #x = tf.keras.layers.Activation(tf.nn.leaky_relu)(x)
+        #x = tf.keras.layers.Dense(self.latent_size)(x)
+
+        return tf.keras.models.Model(inputs=[images], outputs=[x], name='mu_sigma')
+
+    def make_Eblock(self,name,nf):
+ 
+        # on fait cette approche car on ne sait pas la taille donc on met pas un input
+        block_layers = []
+
+        block_layers.append(tf.keras.layers.Convolution3D(nf, kernel_size=3, strides=1, padding='same'))
+        block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu))
+
+        block_layers.append(tf.keras.layers.Convolution3D(nf, kernel_size=3, strides=2, padding='same')) # check padding
+        block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu))
+
+        return tf.keras.models.Sequential(block_layers, name=name)
+
+    def _nf(self, stage): 
+        # computes number of filters for each layer
+        return min(int(self.fmap_base / (2.0 ** (stage))), self.fmap_max)
+
+    def _weighted_sum(self):
+        return tf.keras.layers.Lambda(lambda inputs : (1-inputs[2])*inputs[0] + (inputs[2])*inputs[1])
+
+    def add_resolution(self):
+        
+        # Add resolution
+        self.update_res()
+
+        # Gan images
+        images = tf.keras.layers.Input(shape=(self.current_width,)*self.dimensionality+ (self.num_channels,),name = 'GAN_images')
+
+        # Compression block
+        name = 'block_{}'.format(self.current_resolution)
+        e_block = self.make_Eblock(name=name,nf=self._nf(self.current_resolution-1))
+
+        # Channel compression
+        from_rgb_1 = tf.keras.layers.AveragePooling3D()(images)
+        from_rgb_1 = tf.keras.layers.Conv3D(self._nf(self.current_resolution-1), kernel_size=1, padding='same', name='from_rgb_1')(from_rgb_1)
+
+        print(self._nf(self.current_resolution))
+        from_rgb_2 = tf.keras.layers.Conv3D(self._nf(self.current_resolution), kernel_size=1, padding='same', name='from_rgb_2')(images)
+        from_rgb_2 = e_block(from_rgb_2)
+
+        lerp_input = self._weighted_sum()([from_rgb_1, from_rgb_2, tf.constant(2,dtype=tf.float32)]) # RANDOM ALPHA
+
+        # Getting latent code 
+        #block_output = e_block(lerp_input)
+        print(lerp_input)
+        print(self.growing_encoder(lerp_input))
+        [e_output] = self.growing_encoder(lerp_input)
+
+        # Updating the model
+        self.growing_encoder = tf.keras.Sequential([e_block,self.growing_encoder]) # without channel compression
+        self.train_encoder = tf.keras.Model(inputs=[images],outputs=[e_output]) # with channel compression
         print(self.train_encoder.summary())
       
 class Decoder(): 
