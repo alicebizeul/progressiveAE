@@ -10,9 +10,9 @@ import numpy as np
 
 class PGVAE:
 
-    def __init__(self,latent_size,generator_folder,strategy):
+    def __init__(self,latent_size,generator_folder,_strategy):
 
-        if strategy: self.strategy = tf.distribute.MirroredStrategy()
+        if _strategy: self.strategy = tf.distribute.MirroredStrategy()
 
         # Dynamic parameters
         with self.strategy.scope():
