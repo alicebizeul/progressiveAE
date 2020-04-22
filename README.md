@@ -1,6 +1,6 @@
 # Progressive Autoencoder
 
-Progressive training of Variational Autoencoder for the generation of 3D MRI brains.
+Progressive training of Autoencoder for the generation of 3D MRI brains.
 
  ## Installation
 
