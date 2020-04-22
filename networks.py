@@ -153,7 +153,7 @@ class Encoder:
         #x = tf.keras.layers.Activation(tf.nn.leaky_relu)(x)
         #x = tf.keras.layers.Dense(self.latent_size)(x)
 
-        return tf.keras.models.Model(inputs=[images], outputs=[x], name='mu_sigma')
+        return tf.keras.models.Model(inputs=[images], outputs=[x], name='latent_code')
 
     def make_Eblock(self,name,nf):
  
@@ -201,7 +201,7 @@ class Encoder:
         #block_output = e_block(lerp_input)
         print(lerp_input)
         print(self.growing_encoder(lerp_input))
-        [e_output] = self.growing_encoder(lerp_input)
+        e_output = self.growing_encoder(lerp_input)
 
         # Updating the model
         self.growing_encoder = tf.keras.Sequential([e_block,self.growing_encoder]) # without channel compression
