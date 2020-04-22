@@ -22,7 +22,7 @@ Required arguments are:
 Additional arguments : 
 
 - **start_res** : initial image resolution to start training with (default: 2)
-- **latent** : latent code size (dafault: 1024)
+- **latent** : latent code size (default: 1024)
 
 ## Testing 
 
