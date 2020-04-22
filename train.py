@@ -35,7 +35,7 @@ class PGVAE:
         self.current_width = 2 ** self.current_resolution
 
     def add_resolution(self):
-        with strategy.scope():
+        with self.strategy.scope():
             self.update_res()
             self.generator.add_resolution()
             self.encoder.add_resolution()
