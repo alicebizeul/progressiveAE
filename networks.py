@@ -46,7 +46,7 @@ class VEncoder:
         #z = tensorflow_probability.distributions.Normal(loc=mu, scale=sigma)
         print([mu,sigma])
 
-        return tf.keras.models.Model(inputs=[images], outputs=[mu], name='mu_sigma')
+        return tf.keras.models.Model(inputs=[images], outputs=[mu,sigma], name='mu_sigma')
 
     def make_Eblock(self,name,nf):
         print(nf)
@@ -98,9 +98,9 @@ class VEncoder:
         print(tmp1)
         if self.tmp3 : 
             print('trying')
-            [x] = self.tmp3(tmp1)
+            x = self.tmp3(tmp1)
             print(x)
-        [tmp_mu] = self.growing_encoder(tmp1)
+        tmp_mu = self.growing_encoder(tmp1)
         self.tmp3 = tf.keras.Model(inputs=[images_tmp],outputs=[tmp_mu])
         print(self.tmp3.summary())
 

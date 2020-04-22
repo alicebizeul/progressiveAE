@@ -37,10 +37,10 @@ class PGVAE:
         self.decoder.add_resolution() 
 
     def get_batchsize(self):
-        return self.res_batch[self.current_resolution]
+        return self.res_batch[self.current_width]
 
     def get_epochs(self):
-        return self.res_epoch[self.current_resolution]
+        return self.res_epoch[self.current_width]
 
     def train_resolution(self,batch_size,epochs,save_folder):
 
