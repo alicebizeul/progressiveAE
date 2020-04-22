@@ -37,12 +37,10 @@ class PGVAE:
         self.current_width = 2 ** self.current_resolution
 
     def add_resolution(self):
-        print(self.strategy)
-        with self.strategy.scope():
-            self.update_res()
-            self.generator.add_resolution()
-            self.encoder.add_resolution()
-            self.decoder.add_resolution() 
+        self.update_res()
+        self.generator.add_resolution()
+        self.encoder.add_resolution()
+        self.decoder.add_resolution() 
 
     def get_current_alpha(self, iters_done, iters_per_transition):
         return iters_done/iters_per_transition
@@ -143,7 +141,7 @@ class PGVAE:
         for i, resolution in enumerate(resolutions):
             print('Processing step {}: resolution {} with max resolution {}'.format(i,resolution,resolutions[-1]),flush=True)
             
-            self.add_resolution()
+            with self.strategy.scope(): self.add_resolution()
 
             batch_size = self.get_batchsize()
             epochs = self.get_epochs()
