@@ -74,7 +74,7 @@ class PGVAE:
                     # Forward pass 
                     images = self.generator.generator([inputs,alpha],training=False)
                     latent_codes = self.encoder.train_encoder(images,training=True)
-                    reconst_images = self.decoder.decoder(latent_codes,training=False)
+                    reconst_images = self.decoder.decoder([latent_codes,alpha],training=False)
                     
                     # Forward pass - Variational
                     #mu, sigma = self.encoder.train_encoder(inputs,training=True)
