@@ -10,12 +10,15 @@ import numpy as np
 
 class PGVAE:
 
-    def __init__(self,latent_size,generator_folder):
+    def __init__(self,latent_size,generator_folder,strategy):
+
+        if strategy: self.strategy = tf.distribute.MirroredStrategy()
 
         # Dynamic parameters
-        self.generator = networks.Generator(latent_size=latent_size,generator_folder=generator_folder)
-        self.encoder = networks.Encoder(latent_size=latent_size)
-        self.decoder = networks.Decoder(latent_size=latent_size,generator_folder=generator_folder)
+        with self.strategy.scope():
+            self.generator = networks.Generator(latent_size=latent_size,generator_folder=generator_folder)
+            self.encoder = networks.Encoder(latent_size=latent_size)
+            self.decoder = networks.Decoder(latent_size=latent_size,generator_folder=generator_folder)
 
         self.current_resolution = 1
         self.current_width = 2**self.current_resolution
@@ -33,10 +36,11 @@ class PGVAE:
         self.current_width = 2 ** self.current_resolution
 
     def add_resolution(self):
-        self.update_res()
-        self.generator.add_resolution()
-        self.encoder.add_resolution()
-        self.decoder.add_resolution() 
+        with self.strategy.scope():
+            self.update_res()
+            self.generator.add_resolution()
+            self.encoder.add_resolution()
+            self.decoder.add_resolution() 
 
     def get_current_alpha(self, iters_done, iters_per_transition):
         return iters_done/iters_per_transition
@@ -49,9 +53,8 @@ class PGVAE:
 
     def train_resolution(self,batch_size,epochs,save_folder):
 
-        strategy = tf.distribute.MirroredStrategy()
-        print ('Number of devices: {}'.format(strategy.num_replicas_in_sync),flush=True)
-        global_batch_size = batch_size * strategy.num_replicas_in_sync
+        print ('Number of devices: {}'.format(self.strategy.num_replicas_in_sync),flush=True)
+        global_batch_size = batch_size * self.strategy.num_replicas_in_sync
 
         # Chack points 
         savefolder = Path(save_folder)
@@ -60,10 +63,10 @@ class PGVAE:
         # create dataset 
         data = self.generator.generate_latents(num_samples=100)
         ds = dataset.get_dataset(data,batch_size)
-        train_dist_dataset = strategy.experimental_distribute_dataset(ds)
+        train_dist_dataset = self.strategy.experimental_distribute_dataset(ds)
 
         # Training loops
-        with strategy.scope():
+        with self.strategy.scope():
 
             optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # QUESTIONS PARAMETERS
             checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
@@ -100,8 +103,8 @@ class PGVAE:
 
             @tf.function
             def distributed_train_step(inputs,alpha):
-                per_replica_losses = strategy.experimental_run_v2(train_step, args=(inputs,alpha,))
-                return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None) # axis
+                per_replica_losses = self.strategy.experimental_run_v2(train_step, args=(inputs,alpha,))
+                return self.strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None) # axis
 
         # Start training.
         for epoch in range(self.res_epoch[self.current_width]):
