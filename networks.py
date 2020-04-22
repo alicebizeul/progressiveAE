@@ -92,9 +92,11 @@ class Encoder:
         # tmp 
         images_tmp = tf.keras.layers.Input(shape=(self.current_width,)*self.dimensionality+ (512,),name = 'GAN_images')
         tmp1 = e_block(images_tmp)
+        print(tmp1)
+        [x,y] = self.tmp3(tmp1)
         [tmp_mu,tmp_sigma] = self.growing_encoder(tmp1)
-        tmp3 = tf.keras.Model(inputs=[images_tmp],outputs=[tmp_mu,tmp_sigma])
-        print(tmp3.summary())
+        self.tmp3 = tf.keras.Model(inputs=[images_tmp],outputs=[tmp_mu,tmp_sigma])
+        print(self.tmp3.summary())
 
         # Getting latent code 
         #block_output = e_block(lerp_input)
