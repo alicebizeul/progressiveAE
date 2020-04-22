@@ -88,7 +88,7 @@ class PGVAE:
                     #elbo = tf.nn.compute_average_loss(elbo, global_batch_size=global_batch_size)
 
                     # Compute the reconstruction loss for AE training
-                    error = losses.Reconstruction_loss(true=inputs,predict=reconst_images)
+                    error = losses.Reconstruction_loss(true=images,predict=reconst_images)
 
                 # Backward pass for AE
                 #grads = tape.gradient(elbo,self.encoder.train_encoder.trainable_variables) - VAE
