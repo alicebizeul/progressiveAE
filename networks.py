@@ -41,6 +41,7 @@ class Encoder:
 
         # Latent code - computed for loss evaluation
         #z = tensorflow_probability.distributions.Normal(loc=mu, scale=sigma)
+        print([mu,sigma])
 
         return tf.keras.models.Model(inputs=[images], outputs=[mu,sigma], name='mu_sigma')
 
@@ -90,6 +91,7 @@ class Encoder:
 
         # Getting latent code 
         #block_output = e_block(lerp_input)
+        print(lerp_input)
         print(self.growing_encoder(lerp_input))
         [e_mu,e_sigma] = self.growing_encoder(lerp_input)
 
@@ -150,12 +152,7 @@ class Generator():
     def get_model(self,folder,res):
         # find the model for the appropriate resolution
         path = Path(folder)
-        print([x for x in path.iterdir()])
-        print(list(path.glob('**/g_3.h5')))
-        print('**/g_{}.h5'.format(res))
-        print(list(path.glob('**/g_{}.h5'.format(res))))
         try:
-            print(str(list(path.glob('g_{}.h5'.format(res)))[0].resolve()))
             return str(list(path.glob('**/g_{}.h5'.format(res)))[0].resolve())
         except: print('No pretrained model for this resolution')
 
