@@ -78,7 +78,6 @@ class Encoder:
         # Compression block
         name = 'block_{}'.format(self.current_resolution)
         e_block = self.make_Eblock(name=name,nf=self._nf(self.current_resolution-1))
-        print(e_block.summary())
 
         # Channel compression
         from_rgb_1 = tf.keras.layers.AveragePooling3D()(images)
