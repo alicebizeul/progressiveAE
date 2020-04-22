@@ -90,6 +90,13 @@ class Encoder:
 
         lerp_input = self._weighted_sum()([from_rgb_1, from_rgb_2, tf.constant(2,dtype=tf.float32)]) # RANDOM ALPHA
 
+        # tmp 
+        images_tmp = tf.keras.layers.Input(shape=(self.current_width,)*self.dimensionality+ (512,),name = 'GAN_images')
+        tmp1 = e_block(images_tmp)
+        [tmp_mu,tmp_sigma] = self.growing_encoder(tmp1)
+        tmp3 = tf.keras.Model(inputs=[images_tmp],outputs=[tmp_mu,tmp_sigma])
+        print(tmp3.summary())
+
         # Getting latent code 
         #block_output = e_block(lerp_input)
         print(lerp_input)
