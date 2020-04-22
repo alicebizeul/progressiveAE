@@ -61,7 +61,7 @@ class PGVAE:
         with strategy.scope():
 
             optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # QUESTIONS PARAMETERS
-            checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder)
+            checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
 
             def train_step(inputs):
                 with tf.GradientTape() as tape:

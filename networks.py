@@ -198,9 +198,6 @@ class Encoder:
         lerp_input = self._weighted_sum()([from_rgb_1, from_rgb_2, tf.constant(2,dtype=tf.float32)]) # RANDOM ALPHA
 
         # Getting latent code 
-        #block_output = e_block(lerp_input)
-        print(lerp_input)
-        print(self.growing_encoder(lerp_input))
         e_output = self.growing_encoder(lerp_input)
 
         # Updating the model
