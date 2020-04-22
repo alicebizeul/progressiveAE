@@ -69,8 +69,9 @@ class PGVAE:
                 with tf.GradientTape() as tape:
 
                     # Forward pass 
-                    latent_code = self.encoder.train_encoder(inputs,training=True)
-                    reconst_images = self.decoder.decoder(latent_code,training=True)
+                    images = self.generator.generator(inputs,training=False)
+                    latent_codes = self.encoder.train_encoder(images,training=True)
+                    reconst_images = self.decoder.decoder(latent_codes,training=False)
                     
                     # Forward pass - Variational
                     #mu, sigma = self.encoder.train_encoder(inputs,training=True)
