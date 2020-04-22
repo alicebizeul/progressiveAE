@@ -96,7 +96,10 @@ class Encoder:
         images_tmp = tf.keras.layers.Input(shape=(self.current_width,)*self.dimensionality+ (512,),name = 'GAN_images')
         tmp1 = e_block(images_tmp)
         print(tmp1)
-        if self.tmp3 : [x,y] = self.tmp3(tmp1)
+        if self.tmp3 : 
+            print('trying')
+            [x,y] = self.tmp3(tmp1)
+            print(x,y)
         [tmp_mu,tmp_sigma] = self.growing_encoder(tmp1)
         self.tmp3 = tf.keras.Model(inputs=[images_tmp],outputs=[tmp_mu,tmp_sigma])
         print(self.tmp3.summary())
