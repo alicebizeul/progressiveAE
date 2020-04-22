@@ -13,6 +13,7 @@ class PGVAE:
     def __init__(self,latent_size,generator_folder,_strategy):
 
         if _strategy: self.strategy = tf.distribute.MirroredStrategy()
+        print(self.strategy)
 
         # Dynamic parameters
         with self.strategy.scope():
