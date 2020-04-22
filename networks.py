@@ -42,7 +42,7 @@ class Encoder:
         # Latent code - computed for loss evaluation
         #z = tensorflow_probability.distributions.Normal(loc=mu, scale=sigma)
 
-        return tf.keras.models.Model(inputs=[images], outputs=np.array([mu,sigma]), name='mu_sigma')
+        return tf.keras.models.Model(inputs=[images], outputs=[mu,sigma], name='mu_sigma')
 
     def make_Eblock(self,name,nf):
         print(nf)
