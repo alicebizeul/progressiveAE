@@ -89,6 +89,7 @@ class Encoder:
 
         # Getting latent code 
         #block_output = e_block(lerp_input)
+        print(self.growing_encoder(lerp_input))
         [e_mu,e_sigma] = self.growing_encoder(lerp_input)
 
         # Updating the model
