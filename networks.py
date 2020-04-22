@@ -60,7 +60,8 @@ class Encoder:
 
     def _nf(self, stage): 
         # computes number of filters for each layer
-        return min(int(self.fmap_base / (2.0 ** (stage))), self.fmap_max)
+        #return min(int(self.fmap_base / (2.0 ** (stage))), self.fmap_max)
+        return 512
 
     def _weighted_sum(self):
         return tf.keras.layers.Lambda(lambda inputs : (1-inputs[2])*inputs[0] + (inputs[2])*inputs[1])
