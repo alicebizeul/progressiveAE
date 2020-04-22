@@ -21,6 +21,9 @@ class Encoder:
         self.current_width = 2 ** self.current_resolution
         self.growing_encoder = self.make_Ebase(nf=self._nf(1))
         self.train_encoder = self.growing_encoder
+
+        #tmp
+        self.tmp3 = None
     
     def update_res(self):
         self.current_resolution += 1
@@ -93,7 +96,7 @@ class Encoder:
         images_tmp = tf.keras.layers.Input(shape=(self.current_width,)*self.dimensionality+ (512,),name = 'GAN_images')
         tmp1 = e_block(images_tmp)
         print(tmp1)
-        [x,y] = self.tmp3(tmp1)
+        if self.tmp3 : [x,y] = self.tmp3(tmp1)
         [tmp_mu,tmp_sigma] = self.growing_encoder(tmp1)
         self.tmp3 = tf.keras.Model(inputs=[images_tmp],outputs=[tmp_mu,tmp_sigma])
         print(self.tmp3.summary())
