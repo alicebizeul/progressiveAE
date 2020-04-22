@@ -98,21 +98,21 @@ class Encoder:
         print(tmp1)
         if self.tmp3 : 
             print('trying')
-            [x,y] = self.tmp3(tmp1)
-            print(x,y)
-        [tmp_mu,tmp_sigma] = self.growing_encoder(tmp1)
-        self.tmp3 = tf.keras.Model(inputs=[images_tmp],outputs=[tmp_mu,tmp_sigma])
+            [x] = self.tmp3(tmp1)
+            print(x)
+        [tmp_mu] = self.growing_encoder(tmp1)
+        self.tmp3 = tf.keras.Model(inputs=[images_tmp],outputs=[tmp_mu])
         print(self.tmp3.summary())
 
         # Getting latent code 
         #block_output = e_block(lerp_input)
         print(lerp_input)
         print(self.growing_encoder(lerp_input))
-        [e_mu,e_sigma] = self.growing_encoder(lerp_input)
+        [e_mu] = self.growing_encoder(lerp_input)
 
         # Updating the model
         self.growing_encoder = tf.keras.Sequential([e_block,self.growing_encoder]) # without channel compression
-        self.train_encoder = tf.keras.Model(inputs=[images],outputs=[e_mu,e_sigma]) # with channel compression
+        self.train_encoder = tf.keras.Model(inputs=[images],outputs=[e_mu]) # with channel compression
         print(self.train_encoder.summary())
       
 class Decoder(): 
