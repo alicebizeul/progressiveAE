@@ -38,6 +38,9 @@ class PGVAE:
         self.encoder.add_resolution()
         self.decoder.add_resolution() 
 
+    def get_current_alpha(self, iters_done, iters_per_transition):
+        return iters_done/iters_per_transition
+
     def get_batchsize(self):
         return self.res_batch[self.current_width]
 
@@ -65,11 +68,11 @@ class PGVAE:
             optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # QUESTIONS PARAMETERS
             checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
 
-            def train_step(inputs):
+            def train_step(inputs,alpha):
                 with tf.GradientTape() as tape:
 
                     # Forward pass 
-                    images = self.generator.generator(inputs,training=False)
+                    images = self.generator.generator([inputs,alpha],training=False)
                     latent_codes = self.encoder.train_encoder(images,training=True)
                     reconst_images = self.decoder.decoder(latent_codes,training=False)
                     
@@ -96,8 +99,8 @@ class PGVAE:
                 return error
 
             @tf.function
-            def distributed_train_step(inputs):
-                per_replica_losses = strategy.experimental_run_v2(train_step, args=(inputs,))
+            def distributed_train_step(inputs,alpha):
+                per_replica_losses = strategy.experimental_run_v2(train_step, args=(inputs,alpha,))
                 return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None) # axis
 
         # Start training.
@@ -105,8 +108,12 @@ class PGVAE:
             print('Starting the training : epoch {}'.format(epoch),flush=True)
             total_loss = 0.0
             num_batches = 0
-            for this_x in train_dist_dataset:
-                tmp_loss = distributed_train_step(this_x)
+
+            alpha = tf.constant(self.get_current_alpha(epoch,self.res_epoch[self.current_width]),tf.float32)
+            print('Alpha: ',alpha)
+
+            for this_latent in train_dist_dataset:
+                tmp_loss = distributed_train_step(this_latent,alpha)
                 total_loss += tmp_loss
                 num_batches += 1
                 print('----- Batch Number {} : {}'.format(num_batches,tmp_loss),flush=True)
