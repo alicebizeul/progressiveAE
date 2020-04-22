@@ -30,6 +30,7 @@ def get_dataset(data,batch_size):
 
     dataset = tf.data.Dataset.from_tensor_slices(data)
     #dataset = dataset.map(lambda x: parse_image(x), num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    dataset = dataset.unbatch()
     dataset = dataset.batch(batch_size, drop_remainder=True)
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     return dataset
