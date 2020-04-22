@@ -12,6 +12,7 @@ class PGVAE:
 
     def __init__(self,latent_size,generator_folder):
 
+        # Dynamic parameters
         self.generator = networks.Generator(latent_size=latent_size,generator_folder=generator_folder)
         self.encoder = networks.Encoder(latent_size=latent_size)
         self.decoder = networks.Decoder(latent_size=latent_size,generator_folder=generator_folder)
@@ -21,6 +22,7 @@ class PGVAE:
         self.res_batch = {2:128,4:64,8:32,16:16,32:8,64:4,128:2,256:1}
         self.res_epoch = {2:10,4:20,8:40,16:60,32:80,64:100,128:200,256:400}
 
+        # Static parameters
         self.generate = True
         self.strategy = True
         self.prior = 'Normal'
@@ -65,22 +67,32 @@ class PGVAE:
 
             def train_step(inputs):
                 with tf.GradientTape() as tape:
+
+                    # Forward pass 
+                    latent_code = self.encoder.train_encoder(inputs,training=True)
+                    reconst_images = self.decoder.decoder(latent_code,training=True)
                     
-                    # Forward pass
-                    mu,sigma = self.encoder.train_encoder(inputs,training=True)
-                    latent_code = tfp.distributions.Normal(loc=mu, scale=sigma) #/ tfd.MultivariateNormalDiag(loc, scale)/tfd = tf.contrib.distributions
-                    reconst_images = self.decoder.decoder(latent_code,training=False)
+                    # Forward pass - Variational
+                    #mu, sigma = self.encoder.train_encoder(inputs,training=True)
+                    #latent_code = tfp.distributions.Normal(loc=mu, scale=sigma) #/ tfd.MultivariateNormalDiag(loc, scale)/tfd = tf.contrib.distributions
+                    #reconst_images = self.decoder.decoder(latent_code,training=False)
 
                     # Compute the ELBO loss for VAE training 
-                    reconstruction = losses.Reconstruction_loss(true=inputs,predict=reconst_images)
-                    kl = losses.Kullback_Leibler(mu=mu,sigma=sigma)
-                    elbo = losses.ELBO(kl=kl,reconstruction=reconstruction)
-                    elbo = tf.nn.compute_average_loss(elbo, global_batch_size=global_batch_size)
+                    #reconstruction = losses.Reconstruction_loss(true=inputs,predict=reconst_images)
+                    #kl = losses.Kullback_Leibler(mu=mu,sigma=sigma)
+                    #elbo = losses.ELBO(kl=kl,reconstruction=reconstruction)
+                    #elbo = tf.nn.compute_average_loss(elbo, global_batch_size=global_batch_size)
 
-                # Backward pass
-                grads = tape.gradient(elbo, self.encoder.train_encoder.trainable_variables)
+                    # Compute the reconstruction loss for AE training
+                    error = losses.Reconstruction_loss(true=inputs,predict=reconst_images)
+
+                # Backward pass for AE
+                #grads = tape.gradient(elbo,self.encoder.train_encoder.trainable_variables) - VAE
+                grads = tape.gradient(error, self.encoder.train_encoder.trainable_variables)
                 optimizer.apply_gradients(zip(grads, self.encoder.train_encoder.trainable_variables))
-                return elbo
+                
+                # return elbo
+                return error
 
             @tf.function
             def distributed_train_step(inputs):
@@ -88,7 +100,7 @@ class PGVAE:
                 return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None) # axis
 
         # Start training.
-        for epoch in range(self.res_epoch[self.current_resolution]):
+        for epoch in range(self.res_epoch[self.current_width]):
             print('Starting the training : epoch {}'.format(epoch),flush=True)
             total_loss = 0.0
             num_batches = 0
