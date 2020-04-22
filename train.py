@@ -13,7 +13,6 @@ class PGVAE:
     def __init__(self,latent_size,generator_folder):
 
         self.strategy = tf.distribute.MirroredStrategy()
-        print(self.strategy)
 
         # Dynamic parameters
         with self.strategy.scope():
@@ -28,7 +27,6 @@ class PGVAE:
 
         # Static parameters
         self.generate = True
-        self.strategy = True
         self.prior = 'Normal'
         self.learning_rate = 0.001
 
@@ -37,10 +35,11 @@ class PGVAE:
         self.current_width = 2 ** self.current_resolution
 
     def add_resolution(self):
-        self.update_res()
-        self.generator.add_resolution()
-        self.encoder.add_resolution()
-        self.decoder.add_resolution() 
+        with strategy.scope():
+            self.update_res()
+            self.generator.add_resolution()
+            self.encoder.add_resolution()
+            self.decoder.add_resolution() 
 
     def get_current_alpha(self, iters_done, iters_per_transition):
         return iters_done/iters_per_transition
@@ -141,7 +140,7 @@ class PGVAE:
         for i, resolution in enumerate(resolutions):
             print('Processing step {}: resolution {} with max resolution {}'.format(i,resolution,resolutions[-1]),flush=True)
             
-            with self.strategy.scope(): self.add_resolution()
+            self.add_resolution()
 
             batch_size = self.get_batchsize()
             epochs = self.get_epochs()
