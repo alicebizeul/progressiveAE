@@ -60,7 +60,10 @@ class PGVAE:
         # Check points 
         savefolder = Path(save_folder)
         checkpoint_prefix = savefolder.joinpath("vae{}.ckpt".format(self.current_resolution))
-        if self.restore : self.encoder.train_encoder.load_weights('/om2/user/abizeul/test')
+        if self.restore : 
+            latest = tf.train.latest_checkpoint('/om2/user/abizeul/test/')
+            print(latest)
+            self.encoder.train_encoder.load_weights(latest)
 
         # create dataset 
         train_data = self.generator.generate_latents(num_samples=num_samples)
