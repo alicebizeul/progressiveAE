@@ -60,10 +60,6 @@ class PGVAE:
         # Check points 
         savefolder = Path(save_folder)
         checkpoint_prefix = savefolder.joinpath("vae{}.ckpt".format(self.current_resolution))
-        if self.restore : 
-            latest = tf.train.latest_checkpoint('/om2/user/abizeul/test/')
-            print(latest)
-            self.encoder.train_encoder.load_weights(latest)
 
         # create dataset 
         train_data = self.generator.generate_latents(num_samples=num_samples)
@@ -80,6 +76,9 @@ class PGVAE:
             # Initialise
             optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # QUESTIONS PARAMETERS
             checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
+            if self.restore: 
+                latest = tf.train.latest_checkpoint('/om2/user/abizeul/test')
+                checkpoint.restore(latest)
 
             def train_step(inputs,alpha):
                 with tf.GradientTape() as tape:
