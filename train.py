@@ -24,7 +24,7 @@ class PGVAE:
         self.current_resolution = 1
         self.current_width = 2**self.current_resolution
         self.res_batch = {2:64,4:32,8:16,16:8,32:4,64:2,128:1,256:1}
-        self.res_epoch = {2:10,4:20,8:40,16:60,32:80,64:100,128:200,256:400}
+        self.res_epoch = {2:10,4:10,8:30,16:60,32:80,64:100,128:200,256:400}
 
         # Static parameters
         self.generate = True
@@ -150,7 +150,7 @@ class PGVAE:
                 tmp_loss = distributed_train_step(this_latent,alpha)
                 total_loss += tmp_loss
                 num_batches += 1
-                if num_batches%5 == 0: print('----- Batch Number {} : {}'.format(num_batches,tmp_loss),flush=True)
+                if num_batches%10 == 0: print('----- Batch Number {} : {}'.format(num_batches,tmp_loss),flush=True)
 
             train_loss=total_loss/num_batches
 
