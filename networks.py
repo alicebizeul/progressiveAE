@@ -30,7 +30,7 @@ class Encoder:
         self.growing_encoder = tf.keras.Sequential()
         for layer in self.train_encoder.layers:
             print(layer.name)
-            if layer.name.startswith('block_') or layer.name == 'latent_code': 
+            if layer.name.startswith('block_') or layer.name == 'sequential': 
                 self.growing_encoder.add(layer)
 
     def make_Ebase(self,nf):
