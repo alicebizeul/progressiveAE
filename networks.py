@@ -12,7 +12,7 @@ class Encoder:
         self.latent_size = latent_size
         self.num_channels = 1
         self.dimensionality = 3
-        self.fmap_base =  1024 #2048 
+        self.fmap_base =  2048 
         self.fmap_max = 8192
 
         # dynamic parameters
@@ -31,7 +31,7 @@ class Encoder:
         self.growing_encoder = tf.keras.Sequential()
         for layer in self.train_encoder.layers:
             print(layer.name)
-            if layer.name.startswith('block_') or layer.name == 'sequential': 
+            if layer.name.startswith('block_') or layer.name.startswith('sequential'): 
                 self.growing_encoder.add(layer)
 
     def make_Ebase(self,nf):
