@@ -29,6 +29,7 @@ class Encoder:
     def update_weights(self):
         self.growing_encoder = tf.keras.Sequential()
         for layer in self.train_encoder.layers:
+            print(layer.name)
             if layer.name.startswith('block_') or layer.name == 'latent_code': 
                 self.growing_encoder.add(layer)
 
