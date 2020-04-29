@@ -12,13 +12,14 @@ class Encoder:
         self.latent_size = latent_size
         self.num_channels = 1
         self.dimensionality = 3
-        self.fmap_base =  2048
+        self.fmap_base =  1024 #2048 
         self.fmap_max = 8192
 
         # dynamic parameters
         self.current_resolution = 1
         self.current_width = 2 ** self.current_resolution
         self.growing_encoder = self.make_Ebase(nf=self._nf(1))
+        print(self.growing_encoder.summary())
         self.train_encoder = self.growing_encoder
     
     def update_res(self):
@@ -162,6 +163,7 @@ class Generator():
         if self.current_resolution > 2:
             self.generator = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)
             self.generator.trainable = False
+            print(self.generator.summary())
 
     def generate_latents(self,num_samples):
         latents = []
