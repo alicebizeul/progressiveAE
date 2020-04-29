@@ -12,19 +12,24 @@ class Encoder:
         self.latent_size = latent_size
         self.num_channels = 1
         self.dimensionality = 3
-        self.fmap_base = 512 # 2048
+        self.fmap_base =  2048
         self.fmap_max = 8192
 
         # dynamic parameters
         self.current_resolution = 1
         self.current_width = 2 ** self.current_resolution
         self.growing_encoder = self.make_Ebase(nf=self._nf(1))
-        print(self.growing_encoder.summary())
         self.train_encoder = self.growing_encoder
     
     def update_res(self):
         self.current_resolution += 1
         self.current_width = 2 ** self.current_resolution
+
+    def update_weights(self):
+        self.growing_encoder = tf.keras.Sequential()
+        for layer in self.train_encoder.layers:
+            if layer.name.startswith('block_') or layer.name == 'latent_code': 
+                self.growing_encoder.add(layer)
 
     def make_Ebase(self,nf):
 
@@ -65,9 +70,11 @@ class Encoder:
         
         # Add resolution
         self.update_res()
+        self.update_weights()
 
         # Gan images
         images = tf.keras.layers.Input(shape=(self.current_width,)*self.dimensionality+ (self.num_channels,),name = 'GAN_images')
+        alpha = tf.keras.layers.Input(shape=[], name='e_alpha')
 
         # Compression block
         name = 'block_{}'.format(self.current_resolution)
@@ -80,14 +87,14 @@ class Encoder:
         from_rgb_2 = tf.keras.layers.Conv3D(self._nf(self.current_resolution), kernel_size=1, padding='same', name='from_rgb_2')(images)
         from_rgb_2 = e_block(from_rgb_2)
 
-        lerp_input = self._weighted_sum()([from_rgb_1, from_rgb_2, tf.constant(2,dtype=tf.float32)]) # RANDOM ALPHA
+        lerp_input = self._weighted_sum()([from_rgb_1, from_rgb_2, alpha])
 
         # Getting latent code 
         e_output = self.growing_encoder(lerp_input)
 
         # Updating the model
         self.growing_encoder = tf.keras.Sequential([e_block,self.growing_encoder]) # without channel compression
-        self.train_encoder = tf.keras.Model(inputs=[images],outputs=[e_output]) # with channel compression
+        self.train_encoder = tf.keras.Model(inputs=[images,alpha],outputs=[e_output]) # with channel compression
         print(self.train_encoder.summary())
       
 class Decoder(): 

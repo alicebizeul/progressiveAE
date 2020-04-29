@@ -30,7 +30,7 @@ class PGVAE:
         self.generate = True
         self.learning_rate = 0.001
         self.latent_size = 1024
-        self.restore = True
+        self.restore = False
 
     def update_res(self):
         self.current_resolution += 1
@@ -85,7 +85,7 @@ class PGVAE:
 
                     # Forward pass 
                     images = self.generator.generator([inputs,alpha],training=False)
-                    latent_codes = self.encoder.train_encoder(images,training=True)
+                    latent_codes = self.encoder.train_encoder([images,alpha],training=True)
                     reconst_images = self.decoder.decoder([latent_codes,alpha],training=False)
                     
                     # Forward pass - Variational
