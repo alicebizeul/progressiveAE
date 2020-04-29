@@ -30,23 +30,23 @@ class Encoder:
         self.growing_encoder = tf.keras.Sequential()
         for layer in self.train_encoder.layers:
             print(layer.name)
-            if layer.name.startswith('block_') or layer.name == 'sequential': 
+            if layer.name.startswith('block_') or layer.name == 'sequential' or layer.name = 'base_iso2': 
                 self.growing_encoder.add(layer)
 
     def make_Ebase(self,nf):
 
         # 2x2x2 images
-        images = tf.keras.layers.Input(shape= (2,)*self.dimensionality + (nf,), name='images_2iso')
+        images = tf.keras.layers.Input(shape= (2,)*self.dimensionality + (nf,), name='base_iso2')
 
         # Final dense layer
-        x = tf.keras.layers.Flatten()(images)
-        x = tf.keras.layers.Dense(self.latent_size)(x)
+        x = tf.keras.layers.Flatten(name='base_iso2')(images)
+        x = tf.keras.layers.Dense(name='base_iso2',self.latent_size)(x)
 
         # ADD ACTIVATION AND DENSE ??? 
         #x = tf.keras.layers.Activation(tf.nn.leaky_relu)(x)
         #x = tf.keras.layers.Dense(self.latent_size)(x)
 
-        return tf.keras.models.Model(inputs=[images], outputs=[x], name='latent_code')
+        return tf.keras.models.Model(inputs=[images], outputs=[x], name='base_iso2')
 
     def make_Eblock(self,name,nf):
  
