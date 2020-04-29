@@ -20,7 +20,8 @@ class Encoder:
         self.current_width = 2 ** self.current_resolution
         self.growing_encoder = self.make_Ebase(nf=self._nf(1))
         print(self.growing_encoder.summary())
-        self.train_encoder = self.growing_encoder
+        self.train_encoder = tf.keras.Sequential(self.growing_encoder,name='sequential')
+        print(self.train_encoder.summary())
     
     def update_res(self):
         self.current_resolution += 1
@@ -36,17 +37,17 @@ class Encoder:
     def make_Ebase(self,nf):
 
         # 2x2x2 images
-        images = tf.keras.layers.Input(shape= (2,)*self.dimensionality + (nf,), name='base_iso2')
+        images = tf.keras.layers.Input(shape= (2,)*self.dimensionality + (nf,), name='images_iso2')
 
         # Final dense layer
-        x = tf.keras.layers.Flatten(name='base_iso2')(images)
-        x = tf.keras.layers.Dense(name='base_iso2',self.latent_size)(x)
+        x = tf.keras.layers.Flatten()(images)
+        x = tf.keras.layers.Dense(self.latent_size)(x)
 
         # ADD ACTIVATION AND DENSE ??? 
         #x = tf.keras.layers.Activation(tf.nn.leaky_relu)(x)
         #x = tf.keras.layers.Dense(self.latent_size)(x)
 
-        return tf.keras.models.Model(inputs=[images], outputs=[x], name='base_iso2')
+        return tf.keras.models.Model(inputs=[images], outputs=[x], name='latent_code')
 
     def make_Eblock(self,name,nf):
  
