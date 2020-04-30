@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 class PGVAE:
 
-    def __init__(self,latent_size,generator_folder):
+    def __init__(self,latent_size,generator_folder,restore):
 
         self.strategy = tf.distribute.MirroredStrategy()
 
@@ -24,13 +24,13 @@ class PGVAE:
         self.current_resolution = 1
         self.current_width = 2**self.current_resolution
         self.res_batch = {2:64,4:32,8:16,16:8,32:4,64:2,128:1,256:1}
-        self.res_epoch = {2:10,4:10,8:30,16:60,32:80,64:100,128:200,256:400}
+        self.res_epoch = {2:10,4:10,8:30,16:60,32:5,64:100,128:200,256:400}
 
         # Static parameters
         self.generate = True
         self.learning_rate = 0.001
         self.latent_size = 1024
-        self.restore = False
+        self.restore = restore
 
     def update_res(self):
         self.current_resolution += 1
@@ -77,7 +77,7 @@ class PGVAE:
             optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # QUESTIONS PARAMETERS
             checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
             if self.restore: 
-                latest = tf.train.latest_checkpoint('/om2/user/abizeul/test')
+                latest = tf.train.latest_checkpoint(save_folder)
                 checkpoint.restore(latest)
 
             def train_step(inputs,alpha):
@@ -150,7 +150,7 @@ class PGVAE:
                 tmp_loss = distributed_train_step(this_latent,alpha)
                 total_loss += tmp_loss
                 num_batches += 1
-                if num_batches%10 == 0: print('----- Batch Number {} : {}'.format(num_batches,tmp_loss),flush=True)
+                if num_batches%50 == 0: print('----- Batch Number {} : {}'.format(num_batches,tmp_loss),flush=True)
 
             train_loss=total_loss/num_batches
 

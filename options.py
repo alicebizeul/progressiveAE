@@ -14,7 +14,8 @@ class Opts:
         self.train.add_argument('--start_res',required=False,type=int,default=2)
         self.train.add_argument('--stop_res',required=True,type=int)
         self.train.add_argument('--save_folder',required=True,type=str)
-        self.train.add_argument('--num_samples',required=False,default=50000)
+        self.train.add_argument('--num_samples',required=False,type=int,default=50000)
+        self.train.add_argument('--restore',required=False,type=bool,default=False)
 
     def parse(self):
         config = self.parser.parse_args()

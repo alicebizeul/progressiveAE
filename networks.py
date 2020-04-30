@@ -19,9 +19,7 @@ class Encoder:
         self.current_resolution = 1
         self.current_width = 2 ** self.current_resolution
         self.growing_encoder = self.make_Ebase(nf=self._nf(1))
-        print(self.growing_encoder.summary())
         self.train_encoder = tf.keras.Sequential(self.growing_encoder,name='sequential')
-        print(self.train_encoder.summary())
     
     def update_res(self):
         self.current_resolution += 1
@@ -30,7 +28,6 @@ class Encoder:
     def update_weights(self):
         self.growing_encoder = tf.keras.Sequential()
         for layer in self.train_encoder.layers:
-            print(layer.name)
             if layer.name.startswith('block_') or layer.name.startswith('sequential'): 
                 self.growing_encoder.add(layer)
 
@@ -165,7 +162,6 @@ class Generator():
         if self.current_resolution > 2:
             self.generator = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)
             self.generator.trainable = False
-            print(self.generator.summary())
 
     def generate_latents(self,num_samples):
         latents = []
