@@ -77,12 +77,9 @@ class PGVAE:
             optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # QUESTIONS PARAMETERS
             checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
             if self.restore: 
-                print('yesy')
-                print(self.encoder.train_encoder.get_weights())
+                
                 latest = tf.train.latest_checkpoint(save_folder)
-                print('*****************************************************************************************************')
-                print(latest)
-                print(tf.train.list_variables(latest))
+               
                 checkpoint.restore(latest)
                 print(self.encoder.train_encoder.get_weights())
 
