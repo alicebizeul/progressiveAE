@@ -80,7 +80,9 @@ class PGVAE:
                 print('yesy')
                 print(self.encoder.train_encoder.get_weights())
                 latest = tf.train.latest_checkpoint(save_folder)
+                print('*****************************************************************************************************')
                 print(latest)
+                print(tf.train.list_variables(latest))
                 checkpoint.restore(latest)
                 print(self.encoder.train_encoder.get_weights())
 
