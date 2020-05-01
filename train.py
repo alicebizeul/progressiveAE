@@ -75,8 +75,7 @@ class PGVAE:
             if self.restore and self.current_resolution == 5: 
                 
                 latest = tf.train.latest_checkpoint(save_folder)
-                if str(self.current_resolution) in latest:
-                    checkpoint.restore(latest)
+                checkpoint.restore(latest)
 
             def train_step(inputs,alpha):
                 with tf.GradientTape() as tape:
