@@ -24,7 +24,7 @@ class PGVAE:
         self.current_resolution = 1
         self.current_width = 2**self.current_resolution
         self.res_batch = {2:64,4:32,8:16,16:8,32:4,64:2,128:1,256:1}
-        self.res_epoch = {2:10,4:10,8:30,16:60,32:5,64:100,128:200,256:400}
+        self.res_epoch = {2:10,4:10,8:30,16:60,32:0,64:100,128:200,256:400}
 
         # Static parameters
         self.generate = True
@@ -64,24 +64,19 @@ class PGVAE:
         # create dataset 
         train_data = self.generator.generate_latents(num_samples=num_samples)
         train_dist_dataset = self.strategy.experimental_distribute_dataset(dataset.get_dataset(train_data,global_batch_size))
-        #test_data = self.generator.generate_latents(num_samples=100)
-        #test_dist_dataset = self.strategy.experimental_distribute_dataset(dataset.get_dataset(test_data,global_batch_size))
 
         # Training loops
         with self.strategy.scope():
 
-            # Test error metric
-            test_loss = tf.keras.metrics.Mean(name='test_loss')
-
             # Initialise
             optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # QUESTIONS PARAMETERS
             checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
-            if self.restore: 
+
+            if self.restore and self.current_resolution == 5: 
                 
                 latest = tf.train.latest_checkpoint(save_folder)
-               
-                checkpoint.restore(latest)
-                print(self.encoder.train_encoder.get_weights())
+                if str(self.current_resolution) in latest:
+                    checkpoint.restore(latest)
 
             def train_step(inputs,alpha):
                 with tf.GradientTape() as tape:
@@ -117,29 +112,11 @@ class PGVAE:
                 # return elbo
                 return global_error
 
-            #def test_step(inputs,alpha):
-
-                # Evaluation pass
-                #images = self.generator.generator([inputs,alpha],training=False)
-                #latent_codes = self.encoder.train_encoder(images,training=True)
-                #reconst_images = self.decoder.decoder([latent_codes,alpha],training=False)
-
-                # Test error
-                #error = losses.Reconstruction_loss(true=images,predict=reconst_images)
-                #global_error = tf.nn.compute_average_loss(error, global_batch_size=batch_size) # recheck
-
-                #test_loss.update_state(global_error)
-
             @tf.function
             def distributed_train_step(inputs,alpha):
                 per_replica_losses = self.strategy.experimental_run_v2(train_step, args=(inputs,alpha,))
                 print(per_replica_losses)
                 return self.strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None) # axis
-
-            #@tf.function
-            #def distributed_test_step(inputs,alpha):
-            #    self.strategy.experimental_run_v2(test_step, args=(inputs,alpha,))
-
 
         # Start training.
         for epoch in range(self.res_epoch[self.current_width]):
@@ -157,14 +134,10 @@ class PGVAE:
 
             train_loss=total_loss/num_batches
 
-            #for this_latent in test_dist_dataset:
-            #    distributed_test_step(this_latent,tf.constant(1,tf.float32))
-            #    print('Test :',test_loss.result())
-
             # save results
             checkpoint.save(checkpoint_prefix)
-            template = ("Epoch {}, Loss: {}, Test Loss: {}")
-            print (template.format(epoch+1, train_loss, test_loss.result()),flush=True)
+            template = ("Epoch {}, Loss: {}")
+            print (template.format(epoch+1, train_loss),flush=True)
 
         #Save the model and the history
         self.encoder.train_encoder.save(savefolder.joinpath('e{}.h5'.format(self.current_resolution)))
