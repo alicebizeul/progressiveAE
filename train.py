@@ -28,7 +28,7 @@ class PGVAE:
 
         # Static parameters
         self.generate = True
-        self.learning_rate = 0.001
+        self.learning_rate = 0.0001
         self.latent_size = 1024
         self.restore = restore
 
@@ -72,7 +72,7 @@ class PGVAE:
             optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # QUESTIONS PARAMETERS
             checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
 
-            if self.restore and self.current_resolution == 6: 
+            if self.restore and self.current_resolution == 5: 
                 print(self.encoder.train_encoder.get_weights())
                 latest = tf.train.latest_checkpoint(save_folder)
                 checkpoint.restore(latest)
@@ -130,7 +130,8 @@ class PGVAE:
                 tmp_loss = distributed_train_step(this_latent,alpha)
                 total_loss += tmp_loss
                 num_batches += 1
-                if num_batches%50 == 0: print('----- Batch Number {} : {}'.format(num_batches,tmp_loss),flush=True)
+                if num_batches%50 == 0: 
+                    print('----- Batch Number {} : {}'.format(num_batches,tmp_loss),flush=True)
 
             train_loss=total_loss/num_batches
 
