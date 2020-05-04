@@ -75,7 +75,7 @@ class PGVAE:
             if self.restore and self.current_resolution == 5: 
                 print(self.encoder.train_encoder.get_weights())
                 latest = tf.train.latest_checkpoint(save_folder)
-                checkpoint.restore(latest)
+                checkpoint.restore(save_folder+'vae5.ckpt-60')
                 print(self.encoder.train_encoder.get_weights())
 
             def train_step(inputs,alpha):
