@@ -72,10 +72,10 @@ class PGVAE:
             optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # QUESTIONS PARAMETERS
             checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
 
-            if self.restore and self.current_resolution == 5: 
+            if self.restore and self.current_resolution == 6: 
                 print(self.encoder.train_encoder.get_weights())
                 latest = tf.train.latest_checkpoint(save_folder)
-                checkpoint.restore(save_folder+'vae5.ckpt-60')
+                checkpoint.restore(save_folder+'vae6.ckpt-100')
                 print(self.encoder.train_encoder.get_weights())
 
             def train_step(inputs,alpha):
