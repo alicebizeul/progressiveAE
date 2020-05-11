@@ -24,7 +24,7 @@ class PGVAE:
         self.current_resolution = 1
         self.current_width = 2**self.current_resolution
         self.res_batch = {2:64,4:32,8:16,16:8,32:4,64:2,128:1,256:1}
-        self.res_epoch = {2:10,4:10,8:30,16:60,32:0,64:100,128:200,256:400}
+        self.res_epoch = {2:10,4:10,8:30,16:0,32:80,64:100,128:200,256:400}
 
         # Static parameters
         self.generate = True
@@ -72,11 +72,11 @@ class PGVAE:
             optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # QUESTIONS PARAMETERS
             checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
 
-            if self.restore and self.current_resolution == 6: 
-                print(self.encoder.train_encoder.get_weights())
-                latest = tf.train.latest_checkpoint(save_folder)
-                checkpoint.restore(save_folder+'vae6.ckpt-100')
-                print(self.encoder.train_encoder.get_weights())
+            if self.restore and self.current_resolution == 4: 
+                #print(self.encoder.train_encoder.get_weights())
+                #latest = tf.train.latest_checkpoint(save_folder)
+                checkpoint.restore(save_folder+'vae4.ckpt-60')
+                #print(self.encoder.train_encoder.get_weights())
 
             def train_step(inputs,alpha):
                 with tf.GradientTape() as tape:
