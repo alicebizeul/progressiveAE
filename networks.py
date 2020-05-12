@@ -124,7 +124,7 @@ class Decoder():
         self.update_res()
         if self.current_resolution > 2:
             self.decoder = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)
-            self.decoder.trainable = False
+            self.decoder.trainable = False 
 
     def get_decoder(self):
         return self.decoder

@@ -9,25 +9,31 @@ tfd = tfp.distributions
 class VEncoder:
 
     def __init__(self, latent_size):
-        super(Encoder, self).__init__()
+        super(VEncoder, self).__init__()
 
         # static parameters 
         self.latent_size = latent_size
         self.num_channels = 1
         self.dimensionality = 3
-        self.fmap_base = 512
+        self.fmap_base = 2048
         self.fmap_max = 8192
-        self.prior = tfd.Independent(tfd.Normal(loc=tf.zeros(self.latent_size), scale=1),reinterpreted_batch_ndims=1)
-
+    
         # dynamic parameters
         self.current_resolution = 1
         self.current_width = 2 ** self.current_resolution
         self.growing_encoder = self.make_Ebase(nf=self._nf(1))
-        self.train_encoder = self.growing_encoder
+        self.train_encoder = tf.keras.Sequential(self.growing_encoder,name='sequential')
     
     def update_res(self):
         self.current_resolution += 1
         self.current_width = 2 ** self.current_resolution
+
+    # Verifier si necessaire
+    def update_weights(self):
+        self.growing_encoder = tf.keras.Sequential()
+        for layer in self.train_encoder.layers:
+            if layer.name.startswith('block_') or layer.name.startswith('sequential'): 
+                self.growing_encoder.add(layer)
 
     def make_Ebase(self,nf):
 
@@ -38,7 +44,7 @@ class VEncoder:
         x = tf.keras.layers.Dense(tfp.layers.MultivariateNormalTriL.params_size(self.latent_size),activation=None)(x)
         # ADD ACTIVATION AND DENSE ??? 
 
-        z = tfp.layers.MultivariateNormalTriL(self.latent_size,activity_regularizer=tfp.layers.KLDivergenceRegularizer(self.prior, weight=1.0))(x)
+        #z = tfp.layers.MultivariateNormalTriL(self.latent_size,activity_regularizer=tfp.layers.KLDivergenceRegularizer(self.prior, weight=1.0))(x)
 
         # Getting Normal distribution parameters
         #mu = x[:self.latent_size]
@@ -47,7 +53,7 @@ class VEncoder:
         # Latent code - computed for loss evaluation
         #z = tensorflow_probability.distributions.Normal(loc=mu, scale=sigma)
 
-        return tf.keras.models.Model(inputs=[images], outputs=[z], name='mu_sigma')
+        return tf.keras.models.Model(inputs=[images], outputs=[z], name='z')
 
     def make_Eblock(self,name,nf):
 
@@ -73,9 +79,11 @@ class VEncoder:
         
         # Add resolution
         self.update_res()
+        #self.update_weights()
 
         # Gan images
         images = tf.keras.layers.Input(shape=(self.current_width,)*self.dimensionality+ (self.num_channels,),name = 'GAN_images')
+        alpha = tf.keras.layers.Input(shape=[], name='e_alpha')
 
         # Compression block
         name = 'block_{}'.format(self.current_resolution)
@@ -88,11 +96,10 @@ class VEncoder:
         from_rgb_2 = tf.keras.layers.Conv3D(self._nf(self.current_resolution), kernel_size=1, padding='same', name='from_rgb_2')(images)
         from_rgb_2 = e_block(from_rgb_2)
 
-        lerp_input = self._weighted_sum()([from_rgb_1, from_rgb_2, tf.constant(2,dtype=tf.float32)]) # RANDOM ALPHA
+        lerp_input = self._weighted_sum()([from_rgb_1, from_rgb_2, alpha]) # RANDOM ALPHA
 
         # Getting latent code 
-        #block_output = e_block(lerp_input)
-        [e_z] = self.growing_encoder(lerp_input)
+        e_z = self.growing_encoder(lerp_input)
 
         # Updating the model
         self.growing_encoder = tf.keras.Sequential([e_block,self.growing_encoder]) # without channel compression
@@ -122,11 +129,25 @@ class Decoder():
         self.current_resolution += 1
         self.current_width = 2 ** self.current_resolution
 
+    def make_Dblock(self,name):
+
+        block_layers = []
+        block_layers.append(tf.keras.layers.Flatten()) # obligé ??
+        block_layers.append(tf.keras.layers.Dense(self.current_resolution**3)) 
+        #block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu)) - depends on expression of NLL loss
+
+        return tf.keras.models.Sequential(block_layers, name=name)
+
     def add_resolution(self):
         self.update_res()
         if self.current_resolution > 2:
-            self.decoder = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)
-            self.decoder.trainable = False
+            
+            latent = tf.keras.layers.Input(shape=self.latent_size)
+            mu = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)(latent)
+            sigma = self.make_Dblock(name='sigma_block')(mu)
+
+            self.decoder = tf.keras.Model(input=[latent],outputs=[mu,sigma])
+            self.decoder.trainable = True
 
     def get_decoder(self):
         return self.decoder

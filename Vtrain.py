@@ -19,12 +19,12 @@ class PGVAE:
         with self.strategy.scope():
             self.generator = networks.Generator(latent_size=latent_size,generator_folder=generator_folder)
             self.encoder = networks.Encoder(latent_size=latent_size)
-            #self.decoder = networks.Decoder(latent_size=latent_size,generator_folder=generator_folder)
+            self.decoder = networks.Decoder(latent_size=latent_size,generator_folder=generator_folder)
 
         self.current_resolution = 1
         self.current_width = 2**self.current_resolution
         self.res_batch = {2:64,4:32,8:16,16:8,32:4,64:2,128:1,256:1}
-        self.res_epoch = {2:10,4:10,8:30,16:0,32:80,64:0,128:200,256:400}
+        self.res_epoch = {2:10,4:10,8:30,16:0,32:80,64:100,128:200,256:400}
 
         # Static parameters
         self.generate = True
@@ -41,7 +41,7 @@ class PGVAE:
             self.update_res()
             self.generator.add_resolution()
             self.encoder.add_resolution()
-            #self.decoder.add_resolution() 
+            self.decoder.add_resolution() 
 
     def get_current_alpha(self, iters_done, iters_per_transition):
         return iters_done/iters_per_transition
@@ -51,6 +51,10 @@ class PGVAE:
 
     def get_epochs(self):
         return self.res_epoch[self.current_width]
+
+    def reparametrization_trick(mu,sigma):
+        epsilon = tfd.Independent(tfd.Normal(loc=tf.zeros(self.latent_size), scale=1),reinterpreted_batch_ndims=1)
+        return mu + sigma * epsilon
 
     def train_resolution(self,batch_size,epochs,save_folder,num_samples):
 
@@ -72,10 +76,10 @@ class PGVAE:
             optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # QUESTIONS PARAMETERS
             checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
 
-            if self.restore and self.current_resolution == 6: 
+            if self.restore and self.current_resolution == 4: 
                 #print(self.encoder.train_encoder.get_weights())
                 #latest = tf.train.latest_checkpoint(save_folder)
-                checkpoint.restore(save_folder+'vae6.ckpt-100')
+                checkpoint.restore(save_folder+'vae4.ckpt-60')
                 #print(self.encoder.train_encoder.get_weights())
 
             def train_step(inputs,alpha):
@@ -83,29 +87,19 @@ class PGVAE:
 
                     # Forward pass 
                     images = self.generator.generator([inputs,alpha],training=False)
-                    latent_codes = self.encoder.train_encoder([images,alpha],training=True)
-                    reconst_images = self.generator.generator([latent_codes,alpha],training=False)
-                    
-                    # Forward pass - Variational
-                    #q_z_x = self.encoder.train_encoder(inputs,training=True)
-                    #latent_code = tfp.layers.MultivariateNormalTriL(self.latent_size,activity_regularizer=tfp.layers.KLDivergenceRegularizer(self.encoder.prior, weight=1.0))(q_z_x)
-                    #p_x_z = self.decoder.decoder(latent_code,training=False)
-                    #image = 
+                    [q_mu, q_sigma] = self.encoder.train_encoder([images,alpha],training=True)
+                    z = self.reparametrization_trick(mu=q_mu,sigma=q_sigma)
+                    [p_mu, p_sigma] = self.decoder.decoder([z,alpha],training=True)
 
-                    # Compute the ELBO loss for VAE training 
-                    #reconstruction = losses.Reconstruction_loss(true=inputs,predict=reconst_images)
-                    #kl = losses.Kullback_Leibler(mu=mu,sigma=sigma)
-                    #elbo = losses.ELBO(kl=kl,reconstruction=reconstruction)
-                    #elbo = tf.nn.compute_average_loss(elbo, global_batch_size=global_batch_size)
-
-                    # Compute the reconstruction loss for AE training
-                    error = losses.Reconstruction_loss(true=images,predict=reconst_images)
+                    # ELBO Error computation 
+                    nll = losses.neg_loglikelihood(true=images,predict_mu=p_mu,predict_sigma=p_sigma,var_epsilon=0.01)
+                    kl = losses.Kullback_Leibler(mu=q_mu,sigma=q_sigma)
+                    error = losses.ELBO(neg_log_likelihood=nll,kl=kl)
                     print('Error {}:'.format(batch_size),error)
                     global_error = tf.nn.compute_average_loss(error, global_batch_size=global_batch_size) # recheck
                     print('Global {}:'.format(global_batch_size),global_error)
 
                 # Backward pass for AE
-                #grads = tape.gradient(elbo,self.encoder.train_encoder.trainable_variables) - VAE
                 grads = tape.gradient(global_error, self.encoder.train_encoder.trainable_variables)
                 optimizer.apply_gradients(zip(grads, self.encoder.train_encoder.trainable_variables))
                 
@@ -161,8 +155,3 @@ class PGVAE:
             print('**** Batch size : {}   | **** Epochs : {}'.format(batch_size,epochs))
 
             if self.current_resolution >= start_res and self.current_resolution > 2: self.train_resolution(batch_size,epochs,save_folder,num_samples)
-
-
-
-
-
