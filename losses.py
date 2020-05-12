@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 import math
-from keras import backend as K
+#from keras import backend as K
 
 def Kullback_Leibler(mu,sigma):
 
@@ -14,12 +14,13 @@ def Kullback_Leibler(mu,sigma):
 def neg_loglikelihood(true,predict_mu,predict_sigma,var_epsilon):
 
     # Gaussian prior, independant pixels
-    loss = ( 0.5 * math.log(2 * math.pi)
-            + 0.5 * K.log(predict_sigma + var_epsilon)
-            + 0.5 * K.square(true - predict_mu) / (predict_sigma + var_epsilon))
-    print(loss.shape)
-    return loss
-
+    #loss = ( 0.5 * math.log(2 * math.pi)
+    #        + 0.5 * K.log(predict_sigma + var_epsilon)
+    #        + 0.5 * K.square(true - predict_mu) / (predict_sigma + var_epsilon))
+    #print(loss.shape)
+    #return loss
+    return 1
+    
 def Reconstruction_loss(true,predict):
     return tf.reduce_mean(tf.square(tf.subtract(true, predict)),axis=[1,2,3]) # sum over all dimensions
 
