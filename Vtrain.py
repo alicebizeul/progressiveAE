@@ -13,6 +13,12 @@ import matplotlib.pyplot as plt
 class PGVAE:
 
     def __init__(self,latent_size,generator_folder,restore):
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        if gpus:
+            # Currently, memory growth needs to be the same across GPUs
+            for gpu in gpus:
+                print("Next GPU")
+                tf.config.experimental.set_memory_growth(gpu, True)
 
         self.strategy = tf.distribute.MirroredStrategy()
 
