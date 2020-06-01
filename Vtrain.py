@@ -18,9 +18,9 @@ class PGVAE:
 
         # Dynamic parameters
         with self.strategy.scope():
-            self.generator = networks.Generator(latent_size=latent_size,generator_folder=generator_folder)
-            self.encoder = networks.Encoder(latent_size=latent_size)
-            self.decoder = networks.Decoder(latent_size=latent_size,generator_folder=generator_folder)
+            self.generator = Vnetworks.Generator(latent_size=latent_size,generator_folder=generator_folder)
+            self.encoder = Vnetworks.Encoder(latent_size=latent_size)
+            self.decoder = Vnetworks.Decoder(latent_size=latent_size,generator_folder=generator_folder)
 
         self.current_resolution = 1
         self.current_width = 2**self.current_resolution
