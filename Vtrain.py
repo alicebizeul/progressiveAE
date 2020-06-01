@@ -16,6 +16,14 @@ class PGVAE:
 
         self.strategy = tf.distribute.MirroredStrategy()
 
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        if gpus:
+
+            # Currently, memory growth needs to be the same across GPUs
+            for gpu in gpus:
+                print("Next GPU")
+                tf.config.experimental.set_memory_growth(gpu, True)
+
         # Dynamic parameters
         with self.strategy.scope():
             self.generator = Vnetworks.Generator(latent_size=latent_size,generator_folder=generator_folder)
