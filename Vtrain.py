@@ -31,7 +31,7 @@ class PGVAE:
         self.generate = True
         self.learning_rate = 0.00001
         self.latent_size = 1024
-        self.restore = restore
+        self.restore = False
 
     def update_res(self):
         self.current_resolution += 1
@@ -64,7 +64,7 @@ class PGVAE:
 
         # Check points 
         savefolder = Path(save_folder)
-        checkpoint_prefix = savefolder.joinpath("vae{}.ckpt".format(self.current_resolution))
+        checkpoint_prefix = savefolder.joinpath("vae_e{}.ckpt".format(self.current_resolution))
 
         # create dataset 
         train_data = self.generator.generate_latents(num_samples=num_samples)
@@ -75,12 +75,12 @@ class PGVAE:
 
             # Initialise
             optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # QUESTIONS PARAMETERS
-            checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
+            checkpointe = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
 
             if self.restore and self.current_resolution == 4: 
                 #print(self.encoder.train_encoder.get_weights())
                 #latest = tf.train.latest_checkpoint(save_folder)
-                checkpoint.restore(save_folder+'vae4.ckpt-60')
+                checkpointe.restore(save_folder+'vae4.ckpt-60')
                 #print(self.encoder.train_encoder.get_weights())
 
             def train_step(inputs,alpha):
@@ -101,8 +101,10 @@ class PGVAE:
                     print('Global {}:'.format(global_batch_size),global_error)
 
                 # Backward pass for AE
-                grads = tape.gradient(global_error, self.encoder.train_encoder.trainable_variables)
-                optimizer.apply_gradients(zip(grads, self.encoder.train_encoder.trainable_variables))
+                gradse = tape.gradient(global_error, self.encoder.train_encoder.trainable_variables)
+                gradsd = tape.gradient(global_error, self.decoder.decoder.trainable_variables)
+                optimizer.apply_gradients(zip(gradse, self.encoder.train_encoder.trainable_variables))
+                optimizer.apply_gradients(zip(gradsd, self.decoder.decoder.trainable_variables))
                 
                 # return elbo
                 return global_error
@@ -131,12 +133,13 @@ class PGVAE:
             train_loss=total_loss/num_batches
 
             # save results
-            checkpoint.save(checkpoint_prefix)
+            checkpointe.save(checkpoint_prefix)
             template = ("Epoch {}, Loss: {}")
             print (template.format(epoch+1, train_loss),flush=True)
 
         #Save the model and the history
         self.encoder.train_encoder.save(savefolder.joinpath('e{}.h5'.format(self.current_resolution)))
+        self.decoder.decoder.save(savefolder.joinpath('d{}.h5'.format(self.current_resolution)))
 
     def train(self,stop_width,save_folder,start_width,num_samples):
 
