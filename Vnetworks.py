@@ -9,7 +9,7 @@ tfd = tfp.distributions
 class Encoder:
 
     def __init__(self, latent_size):
-        super(VEncoder, self).__init__()
+        super(Encoder, self).__init__()
 
         # static parameters 
         self.latent_size = latent_size
