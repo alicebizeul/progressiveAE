@@ -50,10 +50,7 @@ class VEncoder:
         #mu = x[:self.latent_size]
         #sigma = tf.nn.softplus(x[self.latent_size:])
 
-        # Latent code - computed for loss evaluation
-        #z = tensorflow_probability.distributions.Normal(loc=mu, scale=sigma)
-
-        return tf.keras.models.Model(inputs=[images], outputs=[z], name='z')
+        return tf.keras.models.Model(inputs=[images], outputs=[x], name='z_params')
 
     def make_Eblock(self,name,nf):
 
@@ -134,6 +131,7 @@ class Decoder():
         block_layers = []
         block_layers.append(tf.keras.layers.Flatten()) # obligé ??
         block_layers.append(tf.keras.layers.Dense(self.current_resolution**3)) 
+        block_layers.append(tf.keras.layers.Reshape((self.current_resolution,self.current_resolution,self.current_resolution),input_shape=self.current_resolution**3))
         #block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu)) - depends on expression of NLL loss
 
         return tf.keras.models.Sequential(block_layers, name=name)
@@ -143,8 +141,9 @@ class Decoder():
         if self.current_resolution > 2:
             
             latent = tf.keras.layers.Input(shape=self.latent_size)
-            mu = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)(latent)
-            sigma = self.make_Dblock(name='sigma_block')(mu)
+            common = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)(latent)
+            mu = self.make_Dblock(name='mu_block')(common)
+            sigma = self.make_Dblock(name='sigma_block')(common)
 
             self.decoder = tf.keras.Model(input=[latent],outputs=[mu,sigma])
             self.decoder.trainable = True

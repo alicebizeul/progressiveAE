@@ -1,5 +1,6 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
+import tensorflow_probability.distributions as tfd
 import losses
 import networks
 import dataset
@@ -52,9 +53,9 @@ class PGVAE:
     def get_epochs(self):
         return self.res_epoch[self.current_width]
 
-    def reparametrization_trick(mu,sigma):
-        epsilon = tfd.Independent(tfd.Normal(loc=tf.zeros(self.latent_size), scale=1),reinterpreted_batch_ndims=1)
-        return mu + sigma * epsilon
+    def reparametrization_trick(self,mu,sigma):
+        epsilon = tfd.Independent(tfd.Normal(loc=tf.zeros(self.latent_size), scale=tf.ones(self.latent_size)),reinterpreted_batch_ndims=1)
+        return mu + tf.exp(sigma) * epsilon
 
     def train_resolution(self,batch_size,epochs,save_folder,num_samples):
 
@@ -87,13 +88,13 @@ class PGVAE:
 
                     # Forward pass 
                     images = self.generator.generator([inputs,alpha],training=False)
-                    [q_mu, q_sigma] = self.encoder.train_encoder([images,alpha],training=True)
-                    z = self.reparametrization_trick(mu=q_mu,sigma=q_sigma)
-                    [p_mu, p_sigma] = self.decoder.decoder([z,alpha],training=True)
+                    [q_mu, q_log_sigma] = self.encoder.train_encoder([images,alpha],training=True)
+                    z = self.reparametrization_trick(mu=q_mu,sigma=q_log_sigma)
+                    [p_mu, p_log_sigma] = self.decoder.decoder([z,alpha],training=True)
 
                     # ELBO Error computation 
-                    nll = losses.neg_loglikelihood(true=images,predict_mu=p_mu,predict_sigma=p_sigma,var_epsilon=0.01)
-                    kl = losses.Kullback_Leibler(mu=q_mu,sigma=q_sigma)
+                    nll = losses.neg_loglikelihood(true=images,predict_mu=p_mu,predict_log_sigma=p_log_sigma,var_epsilon=0.01)
+                    kl = losses.Kullback_Leibler(mu=q_mu,log_sigma=q_log_sigma)
                     error = losses.ELBO(neg_log_likelihood=nll,kl=kl)
                     print('Error {}:'.format(batch_size),error)
                     global_error = tf.nn.compute_average_loss(error, global_batch_size=global_batch_size) # recheck
