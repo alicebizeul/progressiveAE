@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 tfd = tfp.distributions
 import losses
-import networks
+import Vnetworks
 import dataset
 import math
 from pathlib import Path
