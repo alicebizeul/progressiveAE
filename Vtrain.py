@@ -124,6 +124,8 @@ class PGVAE:
             alpha = tf.constant(self.get_current_alpha(epoch,self.res_epoch[self.current_width]),tf.float32) # increases with the epochs
 
             for this_latent in train_dist_dataset:
+                x,y = this_latent
+                print(x,y)
                 tmp_loss = distributed_train_step(this_latent,alpha)
                 total_loss += tmp_loss
                 num_batches += 1
