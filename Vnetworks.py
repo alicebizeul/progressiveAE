@@ -6,7 +6,7 @@ import tensorflow_probability as tfp
 
 tfd = tfp.distributions
 
-class VEncoder:
+class Encoder:
 
     def __init__(self, latent_size):
         super(VEncoder, self).__init__()
