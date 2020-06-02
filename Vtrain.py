@@ -16,6 +16,7 @@ class PGVAE:
 
         print("starting operations")
         gpus = tf.config.experimental.list_physical_devices('GPU')
+        print(gpus)
         if gpus:
             # Currently, memory growth needs to be the same across GPUs
             for gpu in gpus:
