@@ -42,7 +42,7 @@ class Encoder:
         # Final dense layer
         x = tf.keras.layers.Flatten()(images)
         print("size",tfp.layers.MultivariateNormalTriL.params_size(self.latent_size))
-        x = tf.keras.layers.Dense(tfp.layers.MultivariateNormalTriL.params_size(self.latent_size),activation=None)(x)
+        x = tf.keras.layers.Dense(2*self.latent_size,activation=None)(x)
         # ADD ACTIVATION AND DENSE ??? 
 
         #z = tfp.layers.MultivariateNormalTriL(self.latent_size,activity_regularizer=tfp.layers.KLDivergenceRegularizer(self.prior, weight=1.0))(x)
