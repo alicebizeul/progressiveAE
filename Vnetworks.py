@@ -130,8 +130,8 @@ class Decoder():
 
         block_layers = []
         block_layers.append(tf.keras.layers.Flatten()) # obligé ??
-        block_layers.append(tf.keras.layers.Dense(self.current_resolution**3)) 
-        block_layers.append(tf.keras.layers.Reshape((self.current_resolution,self.current_resolution,self.current_resolution),input_shape=self.current_resolution**3))
+        block_layers.append(tf.keras.layers.Dense(self.current_width**3)) 
+        block_layers.append(tf.keras.layers.Reshape((self.current_width,self.current_width,self.current_width),input_shape=(self.current_width**3,)))
         #block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu)) - depends on expression of NLL loss
 
         return tf.keras.models.Sequential(block_layers, name=name)
