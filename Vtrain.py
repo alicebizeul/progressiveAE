@@ -85,6 +85,9 @@ class PGVAE:
         # create dataset 
         train_data = self.generator.generate_latents(num_samples=num_samples)
         train_dist_dataset = self.strategy.experimental_distribute_dataset(dataset.get_dataset(train_data,global_batch_size))
+        del train_data
+
+        print("Data processed")
 
         # Training loops
         with self.strategy.scope():
