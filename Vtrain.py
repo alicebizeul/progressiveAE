@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 class PGVAE:
 
     def __init__(self,latent_size,generator_folder,restore):
+
+        print("starting operations")
         gpus = tf.config.experimental.list_physical_devices('GPU')
         if gpus:
             # Currently, memory growth needs to be the same across GPUs
