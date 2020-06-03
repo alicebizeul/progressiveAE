@@ -20,7 +20,6 @@ class PGVAE:
         with self.strategy.scope():
             self.generator = networks.Generator(latent_size=latent_size,generator_folder=generator_folder)
             self.encoder = networks.Encoder(latent_size=latent_size)
-            #self.decoder = networks.Decoder(latent_size=latent_size,generator_folder=generator_folder)
 
         self.current_resolution = 1
         self.current_width = 2**self.current_resolution
@@ -43,7 +42,6 @@ class PGVAE:
             self.update_res()
             self.generator.add_resolution()
             self.encoder.add_resolution()
-            #self.decoder.add_resolution() 
 
     def get_current_alpha(self, iters_done, iters_per_transition):
         return iters_done/iters_per_transition
@@ -73,6 +71,7 @@ class PGVAE:
             # Initialise
             if self.optimizer=='Adam':optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8)
             if self.optimizer=='AdaMod':optimizer = utils.AdaMod(learning_rate=0.001,beta_1=0.9,beta_2=0.999,beta_3=0.9995,epsilon=1e-8)
+            
             checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
 
             if self.restore and self.current_resolution == 6: 
