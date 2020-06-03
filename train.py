@@ -24,7 +24,7 @@ class PGVAE:
         self.current_resolution = 1
         self.current_width = 2**self.current_resolution
         self.res_batch = {2:64,4:32,8:16,16:8,32:4,64:2,128:1,256:1}
-        self.res_epoch = {2:10,4:10,8:30,16:0,32:80,64:0,128:200,256:400}
+        self.res_epoch = {2:10,4:20,8:40,16:60,32:80,64:100,128:200,256:400}
 
         # Static parameters
         self.generate = True
@@ -103,7 +103,6 @@ class PGVAE:
             @tf.function
             def distributed_train_step(inputs,alpha):
                 per_replica_losses = self.strategy.experimental_run_v2(train_step, args=(inputs,alpha,))
-                print(per_replica_losses)
                 return self.strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None) # axis
 
         # Start training.
