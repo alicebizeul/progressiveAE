@@ -28,7 +28,7 @@ class PGVAE:
 
         # Static parameters
         self.generate = True
-        self.learning_rate = 0.00001
+        self.learning_rate = 0.0001
         self.latent_size = 1024
         self.restore = restore
         self.optimizer = param_optimizer
