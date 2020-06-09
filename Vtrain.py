@@ -125,7 +125,6 @@ class PGVAE:
                 optimizer.apply_gradients(zip(gradse, self.encoder.train_encoder.trainable_variables))
                 optimizer.apply_gradients(zip(gradsd, self.decoder.decoder.trainable_variables))
                 
-                # return elbo
                 return global_error
 
             @tf.function
@@ -143,7 +142,6 @@ class PGVAE:
             alpha = tf.constant(self.get_current_alpha(epoch,self.res_epoch[self.current_width]),tf.float32) # increases with the epochs
 
             for this_latent in train_dist_dataset:
-                print(this_latent)
                 tmp_loss = distributed_train_step(this_latent,alpha)
                 total_loss += tmp_loss
                 num_batches += 1
