@@ -1,6 +1,6 @@
 import os
-from Vtrain import PGVAE
-#from train import PGVAE
+#from Vtrain import PGVAE
+from train import PGVAE
 from options import Opts
 
 def main(config):
