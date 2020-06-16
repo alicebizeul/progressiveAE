@@ -16,6 +16,7 @@ def serialize_example(latent):
 def generate_tfrecords(latent_size,save_folder):
     
     tf_folder = Path(save_folder)
+    tf_folder.mkdir(parents=True, exist_ok=False)
     num_samples = 50000
     num_images_pshard = 200
     num_tfrecords=math.ceil(num_samples/num_images_pshard)
