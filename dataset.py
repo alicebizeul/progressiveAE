@@ -52,7 +52,7 @@ def get_tf_dataset(tf_folder):
     tffolder = Path(tf_folder)
     num_parallel_calls = tf.data.experimental.AUTOTUNE
 
-    dataset = tf.data.Dataset.list_files(filenames=tffolder.joinpath('data_train_shard*.tfrec'),shuffle=False)
+    dataset = tf.data.Dataset.list_files(str(tffolder.joinpath('data_train_shard*.tfrec')),shuffle=False)
     cycle_length = 1 if num_parallel_calls is None else num_parallel_calls
 
     dataset = dataset.interleave(
