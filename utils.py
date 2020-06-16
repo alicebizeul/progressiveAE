@@ -6,7 +6,6 @@ from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import state_ops
 
-
 class AdaMod(optimizer_v2.OptimizerV2):
     def __init__(self,
                  learning_rate=0.001,

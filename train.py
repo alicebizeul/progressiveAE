@@ -52,18 +52,11 @@ class PGVAE:
     def get_epochs(self):
         return self.res_epoch[self.current_width]
 
-    def train_resolution(self,batch_size,epochs,save_folder,num_samples):
-
-        print ('Number of devices: {}'.format(self.strategy.num_replicas_in_sync),flush=True)
-        global_batch_size = batch_size * self.strategy.num_replicas_in_sync
+    def train_resolution(self,dataset,batch_size,epochs,save_folder,num_samples):
 
         # Check points 
         savefolder = Path(save_folder)
         checkpoint_prefix = savefolder.joinpath("vae{}.ckpt".format(self.current_resolution))
-
-        # create dataset 
-        train_data = self.generator.generate_latents(num_samples=num_samples)
-        train_dist_dataset = self.strategy.experimental_distribute_dataset(dataset.get_dataset(train_data,global_batch_size))
 
         # Training loops
         with self.strategy.scope():
@@ -90,9 +83,7 @@ class PGVAE:
 
                     # Compute the reconstruction loss for AE training
                     error = losses.Reconstruction_loss(true=images,predict=reconst_images)
-                    print('Error {}:'.format(batch_size),error)
-                    global_error = tf.nn.compute_average_loss(error, global_batch_size=global_batch_size) # recheck
-                    print('Global {}:'.format(global_batch_size),global_error)
+                    global_error = tf.nn.compute_average_loss(error, global_batch_size=batch_size) # recheck
 
                 # Backward pass for AE
                 grads = tape.gradient(global_error, self.encoder.train_encoder.trainable_variables)
@@ -113,7 +104,7 @@ class PGVAE:
 
             alpha = tf.constant(self.get_current_alpha(epoch,self.res_epoch[self.current_width]),tf.float32) # increases with the epochs
 
-            for this_latent in train_dist_dataset:
+            for this_latent in dataset:
                 tmp_loss = distributed_train_step(this_latent,alpha)
                 total_loss += tmp_loss
                 num_batches += 1
@@ -130,12 +121,16 @@ class PGVAE:
         #Save the model and the history
         self.encoder.train_encoder.save(savefolder.joinpath('e{}.h5'.format(self.current_resolution)))
 
-    def train(self,stop_width,save_folder,start_width,num_samples):
+    def train(self,stop_width,save_folder,tf_folder,start_width,num_samples):
+
+        print ('Number of devices: {}'.format(self.strategy.num_replicas_in_sync),flush=True) 
 
         start_res = math.log(start_width,2)
         stop_res = math.log(stop_width,2) # check if multiple of 2
 
         resolutions = [2**x for x in np.arange(2,stop_res+1)]
+
+        train_data = dataset.get_tf_dataset(tf_folder)
 
         for i, resolution in enumerate(resolutions):
             print('Processing step {}: resolution {} with max resolution {}'.format(i,resolution,resolutions[-1]),flush=True)
@@ -143,11 +138,15 @@ class PGVAE:
             self.add_resolution()
 
             batch_size = self.get_batchsize()
+            global_batch_size = batch_size * self.strategy.num_replicas_in_sync
             epochs = self.get_epochs()
+
+            batched_dataset = dataset.batch_dataset(train_data,batch_size=global_batch_size)
+            batched_dist_dataset = self.strategy.experimental_distribute_dataset(batched_dataset)
 
             print('**** Batch size : {}   | **** Epochs : {}'.format(batch_size,epochs))
 
-            if self.current_resolution >= start_res and self.current_resolution > 2: self.train_resolution(batch_size,epochs,save_folder,num_samples)
+            if self.current_resolution >= start_res and self.current_resolution > 2: self.train_resolution(batched_dist_dataset,global_batch_size,epochs,save_folder,num_samples)
 
 
 

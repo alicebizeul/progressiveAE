@@ -1,6 +1,7 @@
 import tensorflow as tf
 from pathlib import Path
 import numpy as np
+import math
 import dataset
 
 class Encoder:
@@ -39,16 +40,10 @@ class Encoder:
         # Final dense layer
         x = tf.keras.layers.Flatten()(images)
         x = tf.keras.layers.Dense(self.latent_size)(x)
-
-        # ADD ACTIVATION AND DENSE ??? 
-        #x = tf.keras.layers.Activation(tf.nn.leaky_relu)(x)
-        #x = tf.keras.layers.Dense(self.latent_size)(x)
-
         return tf.keras.models.Model(inputs=[images], outputs=[x], name='sequential')
 
     def make_Eblock(self,name,nf):
  
-        # on fait cette approche car on ne sait pas la taille donc on met pas un input
         block_layers = []
 
         block_layers.append(tf.keras.layers.Convolution3D(nf, kernel_size=3, strides=1, padding='same'))
@@ -95,21 +90,24 @@ class Encoder:
         # Updating the model
         self.growing_encoder = tf.keras.Sequential([e_block,self.growing_encoder]) # without channel compression
         self.train_encoder = tf.keras.Model(inputs=[images,alpha],outputs=[e_output]) # with channel compression
-        print(self.train_encoder.summary())
       
 class Decoder(): 
 
     def __init__(self, latent_size, generator_folder):
         super(Decoder, self).__init__()
         
-        # static parameters
+        # static parameters 
         self.latent_size = latent_size
-        self.model_folder = generator_folder
+        self.num_channels = 1
+        self.dimensionality = 3
+        self.fmap_base = 2048 
+        self.fmap_max = 8192
 
         # dynamic parameters
         self.current_resolution = 1
-        self.current_width = 2** self.current_resolution
-        self.decoder = None
+        self.current_width = 2 ** self.current_resolution
+        self.growing_decoder = self.make_Dbase(nf=self._nf(1))
+        self.train_decoder = tf.keras.Sequential(self.growing_decoder,name='sequential')
 
     def get_model(self,folder,res):
         # find the model for the appropriate resolution
@@ -120,14 +118,65 @@ class Decoder():
         self.current_resolution += 1
         self.current_width = 2 ** self.current_resolution
 
+    def _nf(self, stage): 
+        # computes number of filters for each layer
+        return min(int(self.fmap_base / (2.0 ** (stage))), self.fmap_max)
+
+    def _weighted_sum(self):
+        return tf.keras.layers.Lambda(lambda inputs : (1-inputs[2])*inputs[0] + (inputs[2])*inputs[1])
+
+    def make_Dbase(self,nf):
+
+        latents = tf.keras.layers.Input(shape=[self.latent_size+self.label_size], name='latents')
+        alpha = tf.keras.layers.Input(shape=[], dtype=tf.float32, name='g_alpha')
+
+        # Latents stage
+        x = tf.keras.layers.BatchNormalization(axis=-1)(latents)
+        x = tf.keras.layers.Dense(self._nf(1)*(2**self.dimensionality))(x)
+        x = tf.keras.layers.Reshape([2]*self.dimensionality+[self._nf(1)])(x)
+
+        return tf.keras.models.Model(inputs=[latents, alpha], outputs=[x], name='decoder_base')
+
+    def make_Dblock(self, nf, name=''):
+        
+        block_layers = []
+
+        # block_layers.append(self.ConvTranspose(nf, kernel_size=3, strides=2, padding='same'))
+        block_layers.append(tf.keras.layers.Upsampling3D())
+        block_layers.append(tf.keras.layers.Convolution3D(nf, kernel_size=3, strides=1, padding='same'))
+        block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu))
+        block_layers.append(tf.keras.layers.BatchNormalization(axis=-1))
+
+        # block_layers.append(self.Conv(nf, kernel_size=3, strides=1, padding='same'))
+        block_layers.append(tf.keras.layers.Convolution3D(nf, kernel_size=3, strides=1, padding='same'))
+        block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu))
+        block_layers.append(tf.keras.layers.BatchNormalization(axis=-1))
+
+        return tf.keras.models.Sequential(block_layers, name=name)
+
     def add_resolution(self):
+        
+        # Add resolution
         self.update_res()
-        if self.current_resolution > 2:
-            self.decoder = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)
-            self.decoder.trainable = False 
+
+        # Residual from input
+        to_rgb_1 = tf.keras.layers.Upsampling3D()(self.growing_decoder.output)
+        to_rgb_1 = tf.keras.layers.Convolution3D(self.num_channels, kernel_size=1)(to_rgb_1)
+       
+        # Growing generator
+        d_block = self.make_Dblock(self._nf(self.current_resolution), name='d_block_{}'.format(self.current_resolution))
+        d_block_output = d_block(self.growing_decoder.output)
+        to_rgb_2 = tf.keras.layers.Convolution3D(self.num_channels, kernel_size=1)(d_block_output)
+
+        lerp_output = self._weighted_sum()([to_rgb_1, to_rgb_2, self.growing_decoder.input[1]])
+        d_output = tf.keras.layers.Activation('tanh')(lerp_output)
+
+        # Updating the model
+        self.growing_decoder = tf.keras.Sequential([self.growing_decoder,d_block]) # without channel compression
+        self.train_decoder = tf.keras.Model(inputs=[self.growing_decoder.input],outputs=[d_output]) # with channel compression
 
     def get_decoder(self):
-        return self.decoder
+        return self.train_decoder
 
     def get_currentres(self):
         return self.current_resolution
@@ -169,28 +218,6 @@ class Generator():
             latent = tf.random.normal((1, self.latent_size))
             latents.append(latent)
         return latents
-
-    def generate_samples(self,num_tfrecords,save_folder):
-        
-        tf_folder = Path(save_folder)
-        num_images_pshard = 200
-
-        for i in range(num_tfrecords):
-            print('Processing of tf record number {} out of {}'.format(i+1,num_tfrecords))
-            tf_path = tf_folder.joinpath('data_train_shard{}.tfrec'.format(i))
-            with tf.io.TFRecordWriter(tf_path) as tf_record_writer : 
-                for samples in range(num_images_pshard):
-
-                    latents = tf.random.normal((1, self.latent_size)) 
-                    images = self.generator(latents)
-                    img_data = np.squeeze(np.array(images[0])).astype('float32') # remove single dimension
-                    img_data = img_data.ravel().tostring()
-                    img_shape = img_data.shape
-
-                    if len(img_shape)==3: # channels
-                        img_shape = np.append(img_shape, 1)
-
-                    tf_record_writer.write(dataset.serialize_example(img_data, img_shape))
         
 
 
