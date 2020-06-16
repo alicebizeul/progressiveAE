@@ -28,13 +28,6 @@ class Encoder:
         self.current_resolution += 1
         self.current_width = 2 ** self.current_resolution
 
-    # Verifier si necessaire
-    def update_weights(self):
-        self.growing_encoder = tf.keras.Sequential()
-        for layer in self.train_encoder.layers:
-            if layer.name.startswith('block_') or layer.name.startswith('sequential'): 
-                self.growing_encoder.add(layer)
-
     def make_Ebase(self,nf):
 
         images = tf.keras.layers.Input(shape= (2,)*self.dimensionality + (nf,), name='images_2iso')
@@ -42,14 +35,6 @@ class Encoder:
         # Final dense layer
         x = tf.keras.layers.Flatten()(images)
         x = tf.keras.layers.Dense(2*self.latent_size,activation=None)(x)
-        # ADD ACTIVATION AND DENSE ??? 
-
-        #z = tfp.layers.MultivariateNormalTriL(self.latent_size,activity_regularizer=tfp.layers.KLDivergenceRegularizer(self.prior, weight=1.0))(x)
-
-        # Getting Normal distribution parameters
-        #mu = x[:self.latent_size]
-        #sigma = tf.nn.softplus(x[self.latent_size:])
-
         return tf.keras.models.Model(inputs=[images], outputs=[x], name='z_params')
 
     def make_Eblock(self,name,nf):
@@ -76,7 +61,6 @@ class Encoder:
         
         # Add resolution
         self.update_res()
-        #self.update_weights()
 
         # Gan images
         images = tf.keras.layers.Input(shape=(self.current_width,)*self.dimensionality+ (self.num_channels,),name = 'GAN_images')
@@ -138,13 +122,13 @@ class Decoder():
 
     def add_resolution(self):
         self.update_res()
+
         if self.current_resolution > 2:
             
             latent = tf.keras.layers.Input(shape=self.latent_size)
             alpha = tf.keras.layers.Input(shape=[], name='d_alpha')
             common = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)([latent,alpha])
-            print(common.shape)
-            print(tf.reshape(common,[common.shape[0],common.shape[1],common.shape[2]]))
+
             mu = self.make_Dblock(name='mu_block')(tf.reshape(common,[common.shape[0],common.shape[1],common.shape[2]]))
             sigma = self.make_Dblock(name='sigma_block')(common)
 
@@ -194,25 +178,3 @@ class Generator():
             latent = tf.random.normal((1, self.latent_size))
             latents.append(latent)
         return latents
-
-    def generate_samples(self,num_tfrecords,save_folder):
-        
-        tf_folder = Path(save_folder)
-        num_images_pshard = 200
-
-        for i in range(num_tfrecords):
-            print('Processing of tf record number {} out of {}'.format(i+1,num_tfrecords))
-            tf_path = tf_folder.joinpath('data_train_shard{}.tfrec'.format(i))
-            with tf.io.TFRecordWriter(tf_path) as tf_record_writer : 
-                for samples in range(num_images_pshard):
-
-                    latents = tf.random.normal((1, self.latent_size)) 
-                    images = self.generator(latents)
-                    img_data = np.squeeze(np.array(images[0])).astype('float32') # remove single dimension
-                    img_data = img_data.ravel().tostring()
-                    img_shape = img_data.shape
-
-                    if len(img_shape)==3: # channels
-                        img_shape = np.append(img_shape, 1)
-
-                    tf_record_writer.write(dataset.serialize_example(img_data, img_shape))

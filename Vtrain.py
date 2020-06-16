@@ -4,6 +4,7 @@ tfd = tfp.distributions
 import losses
 import Vnetworks
 import dataset
+import utils
 import math
 from pathlib import Path
 import numpy as np
@@ -12,25 +13,9 @@ import matplotlib.pyplot as plt
 
 class PGVAE:
 
-    def __init__(self,latent_size,generator_folder,restore):
-
-        print("starting operations")
-        gpus = tf.config.experimental.list_physical_devices('GPU')
-        print('gpus',gpus)
-        if gpus:
-            # Currently, memory growth needs to be the same across GPUs
-            for gpu in gpus:
-                print("Next GPU")
-                tf.config.experimental.set_memory_growth(gpu, True)
+    def __init__(self,latent_size,generator_folder,restore,param_optimizer):
 
         self.strategy = tf.distribute.MirroredStrategy()
-
-        #gpus = tf.config.experimental.list_physical_devices('GPU')
-        #if gpus:
-        #    # Currently, memory growth needs to be the same across GPUs
-        #    for gpu in gpus:
-        #        print("Next GPU")
-        #        tf.config.experimental.set_memory_growth(gpu, True)
 
         # Dynamic parameters
         with self.strategy.scope():
@@ -45,9 +30,10 @@ class PGVAE:
 
         # Static parameters
         self.generate = True
-        self.learning_rate = 0.00001
+        self.learning_rate = 0.0001
         self.latent_size = 1024
         self.restore = False
+        self.optimizer = param_optimizer
 
     def update_res(self):
         self.current_resolution += 1
@@ -73,33 +59,27 @@ class PGVAE:
         epsilon = tfd.Independent(tfd.Normal(loc=tf.zeros(self.latent_size), scale=tf.ones(self.latent_size)),reinterpreted_batch_ndims=1)
         return mu + tf.exp(sigma) * epsilon
 
-    def train_resolution(self,batch_size,epochs,save_folder,num_samples):
-
-        print ('Number of devices: {}'.format(self.strategy.num_replicas_in_sync),flush=True)
-        global_batch_size = batch_size * self.strategy.num_replicas_in_sync
+    def train_resolution(self,dataset,batch_size,epochs,save_folder,num_samples):
 
         # Check points 
         savefolder = Path(save_folder)
-        checkpoint_prefix = savefolder.joinpath("vae_e{}.ckpt".format(self.current_resolution))
-
-        # create dataset 
-        train_data = self.generator.generate_latents(num_samples=num_samples)
-        train_dist_dataset = self.strategy.experimental_distribute_dataset(dataset.get_dataset(train_data,global_batch_size))
-        del train_data
-
-        print("Data processed")
+        checkpoint_prefixE = savefolder.joinpath("vae_e{}.ckpt".format(self.current_resolution))
+        checkpoint_prefixD = savefolder.joinpath("vae_d{}.ckpt".format(self.current_resolution))
 
         # Training loops
         with self.strategy.scope():
 
             # Initialise
-            optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8) # QUESTIONS PARAMETERS
-            checkpointe = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
+            if self.optimizer=='Adam':optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate, beta_1=0.0, beta_2=0.99, epsilon=1e-8)
+            if self.optimizer=='AdaMod':optimizer = utils.AdaMod(learning_rate=0.001,beta_1=0.9,beta_2=0.999,beta_3=0.9995,epsilon=1e-8)
+            
+            checkpointE = tf.train.Checkpoint(optimizer=optimizer, model=self.encoder.train_encoder)
+            checkpointD = tf.train.Checkpoint(optimizer=optimizer, model=self.decoder.decoder)
 
             if self.restore and self.current_resolution == 4: 
                 #print(self.encoder.train_encoder.get_weights())
                 #latest = tf.train.latest_checkpoint(save_folder)
-                checkpointe.restore(save_folder+'vae4.ckpt-60')
+                checkpointE.restore(save_folder+'vae4.ckpt-60')
                 #print(self.encoder.train_encoder.get_weights())
 
             def train_step(inputs,alpha):
@@ -115,11 +95,12 @@ class PGVAE:
                     nll = losses.neg_loglikelihood(true=images,predict_mu=p_mu,predict_log_sigma=p_log_sigma,var_epsilon=0.01)
                     kl = losses.Kullback_Leibler(mu=q_mu,log_sigma=q_log_sigma)
                     error = losses.ELBO(neg_log_likelihood=nll,kl=kl)
-                    print('Error {}:'.format(batch_size),error)
-                    global_error = tf.nn.compute_average_loss(error, global_batch_size=global_batch_size) # recheck
-                    print('Global {}:'.format(global_batch_size),global_error)
+                    global_error = tf.nn.compute_average_loss(error, global_batch_size=batch_size) # recheck
 
                 # Backward pass for AE
+                print('Encoder ',self.encoder.train_encoder.trainable_variables)
+                print('Decoder',self.decoder.decoder.trainable_variables)
+
                 gradse = tape.gradient(global_error, self.encoder.train_encoder.trainable_variables)
                 gradsd = tape.gradient(global_error, self.decoder.decoder.trainable_variables)
                 optimizer.apply_gradients(zip(gradse, self.encoder.train_encoder.trainable_variables))
@@ -141,7 +122,7 @@ class PGVAE:
 
             alpha = tf.constant(self.get_current_alpha(epoch,self.res_epoch[self.current_width]),tf.float32) # increases with the epochs
 
-            for this_latent in train_dist_dataset:
+            for this_latent in dataset:
                 tmp_loss = distributed_train_step(this_latent,alpha)
                 total_loss += tmp_loss
                 num_batches += 1
@@ -151,7 +132,8 @@ class PGVAE:
             train_loss=total_loss/num_batches
 
             # save results
-            checkpointe.save(checkpoint_prefix)
+            checkpointE.save(checkpoint_prefixE)
+            checkpointD.save(checkpoint_prefixD)
             template = ("Epoch {}, Loss: {}")
             print (template.format(epoch+1, train_loss),flush=True)
 
@@ -159,12 +141,16 @@ class PGVAE:
         self.encoder.train_encoder.save(savefolder.joinpath('e{}.h5'.format(self.current_resolution)))
         self.decoder.decoder.save(savefolder.joinpath('d{}.h5'.format(self.current_resolution)))
 
-    def train(self,stop_width,save_folder,start_width,num_samples):
+    def train(self,stop_width,save_folder,tf_folder,start_width,num_samples):
+
+        print ('Number of devices: {}'.format(self.strategy.num_replicas_in_sync),flush=True) 
 
         start_res = math.log(start_width,2)
         stop_res = math.log(stop_width,2) # check if multiple of 2
 
         resolutions = [2**x for x in np.arange(2,stop_res+1)]
+
+        train_data = dataset.get_tf_dataset(tf_folder)
 
         for i, resolution in enumerate(resolutions):
             print('Processing step {}: resolution {} with max resolution {}'.format(i,resolution,resolutions[-1]),flush=True)
@@ -172,8 +158,9 @@ class PGVAE:
             self.add_resolution()
 
             batch_size = self.get_batchsize()
+            global_batch_size = batch_size * self.strategy.num_replicas_in_sync
             epochs = self.get_epochs()
 
             print('**** Batch size : {}   | **** Epochs : {}'.format(batch_size,epochs))
 
-            if self.current_resolution >= start_res and self.current_resolution > 2: self.train_resolution(batch_size,epochs,save_folder,num_samples)
+            if self.current_resolution >= start_res and self.current_resolution > 2: self.train_resolution(batched_dist_dataset,global_batch_size,epochs,save_folder,num_samples)

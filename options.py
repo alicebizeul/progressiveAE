@@ -18,6 +18,7 @@ class Opts:
         self.train.add_argument('--num_samples',required=False,type=int,default=50000)
         self.train.add_argument('--restore',required=False,type=bool,default=False)
         self.train.add_argument('--param_optimizer',required=False,type=str,default="Adam")
+        self.train.add_argument('--variational',required=False,type=bool,default=False)
 
     def parse(self):
         config = self.parser.parse_args()
