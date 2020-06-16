@@ -17,6 +17,7 @@ def generate_tfrecords(latent_size,save_folder):
     
     tf_folder = Path(save_folder)
     tf_folder.mkdir(parents=True, exist_ok=False)
+
     num_samples = 50000
     num_images_pshard = 200
     num_tfrecords=math.ceil(num_samples/num_images_pshard)
@@ -26,7 +27,7 @@ def generate_tfrecords(latent_size,save_folder):
     for i in range(num_tfrecords):
         print('Processing of tf record number {} out of {}'.format(i+1,num_tfrecords))
         tf_path = tf_folder.joinpath('data_train_shard{}.tfrec'.format(i))
-        with tf.io.TFRecordWriter(tf_path) as tf_record_writer : 
+        with tf.io.TFRecordWriter(str(tf_path)) as tf_record_writer : 
             for sample in range(num_images_pshard):
                 latent = np.array(tf.random.normal((1, latent_size))).astype('float32')
                 latent = latent.ravel().tostring()
