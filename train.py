@@ -108,7 +108,7 @@ class PGVAE:
                 tmp_loss = distributed_train_step(this_latent,alpha)
                 total_loss += tmp_loss
                 num_batches += 1
-                if num_batches%50 == 0: 
+                if num_batches%1 == 0: 
                     print('----- Batch Number {} : {:1.10}'.format(num_batches,tmp_loss),flush=True)
 
             train_loss=total_loss/num_batches
