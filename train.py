@@ -144,7 +144,8 @@ class PGVAE:
 
             #batched_dataset = dataset.batch_dataset(train_data,batch_size=global_batch_size)
     
-            batched_dist_dataset = self.strategy.experimental_distribute_dataset(batched_dataset,global_batch_size)
+            batched_dist_dataset = self.strategy.experimental_distribute_dataset(dataset.get_dataset(batched_dataset,global_batch_size))
+
 
             print('**** Batch size : {}   | **** Epochs : {}'.format(batch_size,epochs))
 

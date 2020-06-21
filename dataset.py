@@ -68,3 +68,11 @@ def batch_dataset(dataset,batch_size):
     dataset = dataset.batch(batch_size, drop_remainder=True)
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     return dataset 
+
+def get_dataset(data,batch_size):
+
+    dataset = tf.data.Dataset.from_tensor_slices(data)
+    dataset = dataset.unbatch()
+    dataset = dataset.batch(batch_size, drop_remainder=True)
+    dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    return dataset
