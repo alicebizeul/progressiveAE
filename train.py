@@ -130,9 +130,6 @@ class PGVAE:
 
         resolutions = [2**x for x in np.arange(2,stop_res+1)]
 
-        train_data = dataset.get_tf_dataset(tf_folder)
-        batched_dataset = self.generator.generate_latents(num_samples=num_samples)
-
         for i, resolution in enumerate(resolutions):
             print('Processing step {}: resolution {} with max resolution {}'.format(i,resolution,resolutions[-1]),flush=True)
             
@@ -142,18 +139,12 @@ class PGVAE:
             global_batch_size = batch_size * self.strategy.num_replicas_in_sync
             epochs = self.get_epochs()
 
-            #batched_dataset = dataset.batch_dataset(train_data,batch_size=global_batch_size)
-    
+            batched_dataset = self.generator.generate_latents(num_samples=num_samples)
             batched_dist_dataset = self.strategy.experimental_distribute_dataset(dataset.get_dataset(batched_dataset,global_batch_size))
-
 
             print('**** Batch size : {}   | **** Epochs : {}'.format(batch_size,epochs))
 
             if self.current_resolution >= start_res and self.current_resolution > 2: 
-
-                #batched_dataset = dataset.batch_dataset(train_data,batch_size=global_batch_size)
-                #batched_dist_dataset = self.strategy.experimental_distribute_dataset(batched_dataset)
-
                 self.train_resolution(batched_dist_dataset,global_batch_size,epochs,save_folder,num_samples)
 
 
