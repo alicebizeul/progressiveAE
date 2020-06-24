@@ -128,8 +128,8 @@ class Decoder():
             latent = tf.keras.layers.Input(shape=self.latent_size)
             alpha = tf.keras.layers.Input(shape=[], name='d_alpha')
             common = tf.keras.models.load_model(self.get_model(self.model_folder,self.current_resolution), custom_objects={'leaky_relu': tf.nn.leaky_relu}, compile=True)([latent,alpha])
-
-            mu = self.make_Dblock(name='mu_block')(tf.reshape(common,[common.shape[1],common.shape[2],common.shape[3]]))
+            common = tf.reshape(common,[common.shape[0],common.shape[1],common.shape[2],common.shape[3]])
+            mu = self.make_Dblock(name='mu_block')(common)
             sigma = self.make_Dblock(name='sigma_block')(common)
 
             self.decoder = tf.keras.Model(input=[latent,alpha],outputs=[mu,sigma])
