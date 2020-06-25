@@ -85,7 +85,6 @@ class Encoder:
         # Updating the model
         self.growing_encoder = tf.keras.Sequential([e_block,self.growing_encoder]) # without channel compression
         self.train_encoder = tf.keras.Model(inputs=[images,alpha],outputs=[e_z]) # with channel compression
-        print(self.train_encoder.summary())
       
 class Decoder(): 
 
