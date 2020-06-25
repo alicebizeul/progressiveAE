@@ -94,7 +94,7 @@ class PGVAE:
 
                     # ELBO Error computation 
                     nll = losses.neg_loglikelihood(true=images,predict_mu=p_mu,predict_log_sigma=p_log_sigma,var_epsilon=0.01)
-                    kl = losses.Kullback_Leibler(mu=q_mu,log_sigma=q_log_sigma)
+                    kl = losses.Kullback_Leibler(mu=q[:,:1024],log_sigma=q[:,1024:])
                     error = losses.ELBO(neg_log_likelihood=nll,kl=kl)
                     global_error = tf.nn.compute_average_loss(error, global_batch_size=batch_size) # recheck
 
