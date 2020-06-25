@@ -89,17 +89,19 @@ class PGVAE:
                     # Forward pass 
                     images = self.generator.generator([inputs,alpha],training=False)
                     q = self.encoder.train_encoder([images,alpha],training=True)
-                    print('q mu',q[:,:1024])
-                    print('q sigma',q[:,1024:])
+                    #print('q mu',q[:,:1024])
+                    #print('q sigma',q[:,1024:])
                     z = self.reparametrization_trick(mu=q[:,:1024],sigma=q[:,1024:])
-                    print('z',z)
+                    #print('z',z)
                     [p_mu, p_log_sigma] = self.decoder.decoder([z,alpha],training=True)
-                    print('p mu',p_mu)
-                    print('p sigma',p_log_sigma)
+                    #print('p mu',p_mu)
+                    #print('p sigma',p_log_sigma)
 
                     # ELBO Error computation 
                     nll = losses.neg_loglikelihood(true=images,predict_mu=p_mu,predict_log_sigma=p_log_sigma,var_epsilon=0.01)
+                    print('nll',nll)
                     kl = losses.Kullback_Leibler(mu=q[:,:1024],log_sigma=q[:,1024:])
+                    print('kl',kl)
                     error = losses.ELBO(neg_log_likelihood=nll,kl=kl)
                     global_error = tf.nn.compute_average_loss(error, global_batch_size=batch_size) # recheck
 
