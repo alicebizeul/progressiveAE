@@ -89,8 +89,13 @@ class PGVAE:
                     # Forward pass 
                     images = self.generator.generator([inputs,alpha],training=False)
                     q = self.encoder.train_encoder([images,alpha],training=True)
+                    print('q mu',q[:,:1024])
+                    print('q sigma',q[:,1024,:])
                     z = self.reparametrization_trick(mu=q[:,:1024],sigma=q[:,1024:])
+                    print('z',z)
                     [p_mu, p_log_sigma] = self.decoder.decoder([z,alpha],training=True)
+                    print('p mu',p_mu)
+                    print('p sigma',p_sigma)
 
                     # ELBO Error computation 
                     nll = losses.neg_loglikelihood(true=images,predict_mu=p_mu,predict_log_sigma=p_log_sigma,var_epsilon=0.01)
@@ -107,10 +112,10 @@ class PGVAE:
                 
                 return global_error
 
-            @tf.function
+            #@tf.function
             def distributed_train_step(inputs,alpha):
                 per_replica_losses = self.strategy.experimental_run_v2(train_step, args=(inputs,alpha,))
-                print(per_replica_losses)
+                
                 return self.strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None) # axis
 
         # Start training.
