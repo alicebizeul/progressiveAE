@@ -105,10 +105,6 @@ class PGVAE:
                     error = losses.ELBO(neg_log_likelihood=nll,kl=kl)
                     global_error = tf.nn.compute_average_loss(error, global_batch_size=batch_size) # recheck
 
-                # Backward pass for AE
-                print('Encoder ',self.encoder.train_encoder.trainable_variables)
-                print('Decoder',self.decoder.decoder.trainable_variables)
-
                 grads = tape.gradient(global_error, self.encoder.train_encoder.trainable_variables+self.decoder.decoder.trainable_variables)
                 optimizer.apply_gradients(zip(grads, self.encoder.train_encoder.trainable_variables+self.decoder.decoder.trainable_variables))
                 
