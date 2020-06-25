@@ -115,6 +115,7 @@ class PGVAE:
                 return self.strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses, axis=None) # axis
 
         # Start training.
+        print('EPOCH ',self.res_epoch[self.current_width])
         for epoch in range(self.res_epoch[self.current_width]):
             print('Starting the training : epoch {}'.format(epoch),flush=True)
             total_loss = 0.0
