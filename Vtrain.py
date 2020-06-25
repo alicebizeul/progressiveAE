@@ -89,8 +89,7 @@ class PGVAE:
                     # Forward pass 
                     images = self.generator.generator([inputs,alpha],training=False)
                     q = self.encoder.train_encoder([images,alpha],training=True)
-                    print(q.shape)
-                    z = self.reparametrization_trick(mu=q[:1024],sigma=q[1024:])
+                    z = self.reparametrization_trick(mu=q[:,:1024],sigma=q[:,1024:])
                     [p_mu, p_log_sigma] = self.decoder.decoder([z,alpha],training=True)
 
                     # ELBO Error computation 
@@ -166,7 +165,6 @@ class PGVAE:
             batched_dist_dataset = self.strategy.experimental_distribute_dataset(dataset.get_dataset(batched_dataset,global_batch_size))
 
             print('**** Batch size : {}   | **** Epochs : {}'.format(batch_size,epochs))
-            print(self.current_resolution,start_res)
+
             if self.current_resolution >= start_res and self.current_resolution > 2: 
-                print('hey')
                 self.train_resolution(batched_dist_dataset,global_batch_size,epochs,save_folder,num_samples)
