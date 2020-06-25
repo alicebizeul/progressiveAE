@@ -102,10 +102,8 @@ class PGVAE:
                 print('Encoder ',self.encoder.train_encoder.trainable_variables)
                 print('Decoder',self.decoder.decoder.trainable_variables)
 
-                gradse = tape.gradient(global_error, self.encoder.train_encoder.trainable_variables)
-                gradsd = tape.gradient(global_error, self.decoder.decoder.trainable_variables)
-                optimizer.apply_gradients(zip(gradse, self.encoder.train_encoder.trainable_variables))
-                optimizer.apply_gradients(zip(gradsd, self.decoder.decoder.trainable_variables))
+                grads = tape.gradient(global_error, self.encoder.train_encoder.trainable_variables+self.decoder.decoder.trainable_variables)
+                optimizer.apply_gradients(zip(grads, self.encoder.train_encoder.trainable_variables+self.decoder.decoder.trainable_variables))
                 
                 return global_error
 
