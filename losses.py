@@ -16,7 +16,7 @@ def Kullback_Leibler(mu,log_sigma):
 def neg_loglikelihood(true,predict_mu,predict_log_sigma,var_epsilon):
 
     # Gaussian prior, independant pixels
-    loss = ( 0.5 * tf.math.log(predict_log_sigma + var_epsilon)+ 0.5 * tf.square(tf.math.subtract(tf.squeeze(true) - predict_mu)) / (predict_log_sigma + var_epsilon))
+    loss = ( 0.5 * tf.math.log(predict_log_sigma + var_epsilon)+ 0.5 * tf.square(tf.math.subtract(tf.squeeze(true) , predict_mu)) / (predict_log_sigma + var_epsilon))
     return tf.math.reduce_sum(loss,axis=[1,2,3])
     
 def Reconstruction_loss(true,predict):
