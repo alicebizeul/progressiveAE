@@ -57,8 +57,8 @@ class PGVAE:
 
     def reparametrization_trick(self,mu,sigma):
         epsilon = tfd.Independent(tfd.Normal(loc=tf.zeros(self.latent_size), scale=tf.ones(self.latent_size)))
-        print(epsilon.shape,sigma.shape)
-        return mu + tf.exp(sigma) * epsilon
+        print(sigma.shape)
+        return mu + tf.exp(sigma) * epsilon.sample(1)
 
     def train_resolution(self,dataset,batch_size,epochs,save_folder,num_samples):
 
