@@ -7,7 +7,7 @@ def Kullback_Leibler(mu,log_sigma):
 
     # or sum over divergence for each normal distribution
     q = tfp.distributions.MultivariateNormalDiag(loc=mu,scale_diag=tf.exp(log_sigma),name='Estimate')
-    p = tfp.distributions.MultivariateNormalDiag(loc=0,scale_diag=1,name='True')
+    p = tfp.distributions.MultivariateNormalDiag(loc=tf.zeros(1024),scale_diag=tf.ones(1024),name='True')
 
     # measure the kl divergence over all dimensions and then sum the values
     return tf.reduce_sum(tfp.distributions.kl_divergence(p,q,name='KL divergence'),1)
