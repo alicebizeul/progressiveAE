@@ -98,7 +98,7 @@ class PGVAE:
                     #print('p sigma',p_log_sigma)
 
                     # ELBO Error computation 
-                    nll = losses.neg_loglikelihood(true=images,predict_mu=p_mu,predict_log_sigma=p_log_sigma,var_epsilon=0.01)
+                    nll = losses.neg_loglikelihood(true=images,predict_mu=p_mu,predict_log_sigma=p_log_sigma,var_epsilon=1)
                     print('nll',nll)
                     kl = losses.Kullback_Leibler(mu=q[:,:1024],log_sigma=q[:,1024:])
                     print('kl',kl)
