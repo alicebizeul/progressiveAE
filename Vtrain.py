@@ -164,5 +164,5 @@ class PGVAE:
             batched_dist_dataset = self.strategy.experimental_distribute_dataset(dataset.get_dataset(batched_dataset,global_batch_size))
 
             print('**** Batch size : {}   | **** Epochs : {}'.format(batch_size,epochs))
-
+            print(self.current_resolution)
             if self.current_resolution >= start_res and self.current_resolution > 2: self.train_resolution(batched_dist_dataset,global_batch_size,epochs,save_folder,num_samples)
