@@ -87,8 +87,9 @@ class PGVAE:
 
                     # Forward pass 
                     images = self.generator.generator([inputs,alpha],training=False)
-                    [q_mu, q_log_sigma] = self.encoder.train_encoder([images,alpha],training=True)
-                    z = self.reparametrization_trick(mu=q_mu,sigma=q_log_sigma)
+                    q = self.encoder.train_encoder([images,alpha],training=True)
+                    print(q.shape)
+                    z = self.reparametrization_trick(mu=q[:1024],sigma=q[1024:])
                     [p_mu, p_log_sigma] = self.decoder.decoder([z,alpha],training=True)
 
                     # ELBO Error computation 
