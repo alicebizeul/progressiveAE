@@ -10,7 +10,7 @@ def Kullback_Leibler(mu,log_sigma):
     p = tfp.distributions.MultivariateNormalDiag(loc=tf.zeros(1024),scale_diag=tf.ones(1024),name='True')
 
     # measure the kl divergence over all dimensions and then sum the values
-    return tf.reduce_sum(tfp.distributions.kl_divergence(p,q,name='KLdivergence'),1)
+    return tfp.distributions.kl_divergence(p,q,name='KLdivergence')
     #return tfp.distributions.kl_divergence(p,q,name='KL divergence')
     
 def neg_loglikelihood(true,predict_mu,predict_log_sigma,var_epsilon):
