@@ -13,8 +13,8 @@ class Encoder:
         self.latent_size = latent_size
         self.num_channels = 1
         self.dimensionality = 3
-        self.fmap_base =  2048 
-        self.fmap_max = 8192
+        self.fmap_base =  8192
+        self.fmap_max = 512
 
         # dynamic parameters
         self.current_resolution = 1
@@ -40,10 +40,10 @@ class Encoder:
  
         block_layers = []
 
-        block_layers.append(tf.keras.layers.Convolution3D(nf, kernel_size=3, strides=1, padding='same'))
-        block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu))
+        #block_layers.append(tf.keras.layers.Convolution3D(nf, kernel_size=3, strides=1, padding='same'))
+        #block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu))
 
-        block_layers.append(tf.keras.layers.Convolution3D(nf, kernel_size=3, strides=2, padding='same')) # check padding
+        block_layers.append(tf.keras.layers.Convolution3D(nf, kernel_size=4, strides=2, padding='same')) # check padding
         block_layers.append(tf.keras.layers.Activation(tf.nn.leaky_relu))
 
         return tf.keras.models.Sequential(block_layers, name=name)
