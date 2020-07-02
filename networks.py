@@ -13,7 +13,7 @@ class Encoder:
         self.latent_size = latent_size
         self.num_channels = 1
         self.dimensionality = 3
-        self.fmap_base =  8192
+        self.fmap_base =  4096
         self.fmap_max = 512
 
         # dynamic parameters
