@@ -57,6 +57,7 @@ class PGVAE:
         # Check points 
         savefolder = Path(save_folder)
         checkpoint_prefix = savefolder.joinpath("vae{}.ckpt".format(self.current_resolution))
+        writer = tf.summary.create_file_writer(savefolder.joinpath("/tmp/mylogs/resolution{}".fomat(self.current_resolution)))
 
         # Training loops
         with self.strategy.scope():
@@ -83,13 +84,29 @@ class PGVAE:
 
                     # Compute the reconstruction loss for AE training
                     error = losses.Reconstruction_loss(true=images,predict=reconst_images)
-                    global_error = tf.nn.compute_average_loss(error, global_batch_size=batch_size) # recheck
+                    train_error = tf.nn.compute_average_loss(error, global_batch_size=batch_size) # recheck
 
                 # Backward pass for AE
-                grads = tape.gradient(global_error, self.encoder.train_encoder.trainable_variables)
+                grads = tape.gradient(train_error, self.encoder.train_encoder.trainable_variables)
                 optimizer.apply_gradients(zip(grads, self.encoder.train_encoder.trainable_variables))
 
-                return global_error
+                return train_error
+
+            def test_step():
+
+                inputs = self.generator.generator.generate_latents(num_samples=10)
+                alpha = tf.constant(1.0,tf.float32)
+
+                # Validation pass 
+                images = self.generator.generator([inputs,alpha],training=False)
+                latent_codes = self.encoder.train_encoder([images,alpha],training=True)
+                reconst_images = self.generator.generator([latent_codes,alpha],training=False)
+
+                # Compute the reconstruction loss for AE training
+                error = losses.Reconstruction_loss(true=images,predict=reconst_images)
+                test_error = tf.nn.compute_average_loss(error, global_batch_size=10) # recheck
+
+                return test_error
 
             @tf.function
             def distributed_train_step(inputs,alpha):
@@ -112,11 +129,20 @@ class PGVAE:
                     print('----- Batch Number {} : {:1.10}'.format(num_batches,tmp_loss),flush=True)
 
             train_loss=total_loss/num_batches
+            test_loss=test_step()
+
+            with writer.as_default():
+                tf.summary.scalar("train_loss", train_loss, step=epoch)
+                tf.summary.scalar("test_loss", test_loss, step=epoch)
+            writer.flush()
 
             # save results
             checkpoint.save(checkpoint_prefix)
-            template = ("Epoch {}, Loss: {}")
-            print (template.format(epoch+1, train_loss),flush=True)
+            template_train = ("Train - Epoch {}, Loss: {}")
+            print (template_train.format(epoch+1, train_loss),flush=True)
+            template_test = ("Test - Epoch {}, Loss: {}")
+            print (template_test.format(epoch+1, test_loss),flush=True)
+
 
         #Save the model and the history
         self.encoder.train_encoder.save(savefolder.joinpath('e{}.h5'.format(self.current_resolution)))
