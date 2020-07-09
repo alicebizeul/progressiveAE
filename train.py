@@ -24,7 +24,7 @@ class PGVAE:
         self.current_resolution = 1
         self.current_width = 2**self.current_resolution
         self.res_batch = {2:64,4:32,8:16,16:8,32:4,64:2,128:1,256:1}
-        self.res_epoch = {2:10,4:20,8:40,16:60,32:0,64:100,128:200,256:400}
+        self.res_epoch = {2:10,4:20,8:30,16:50,32:60,64:80,128:100,256:400}
 
         # Static parameters
         self.generate = True
@@ -133,7 +133,7 @@ class PGVAE:
 
             with writer.as_default():
                 tf.summary.scalar("train_loss", train_loss, step=epoch)
-                tf.summary.scalar("test_loss", test_loss, step=epoch)
+                tf.summary.scalagitr("test_loss", test_loss, step=epoch)
             writer.flush()
 
             # save results
