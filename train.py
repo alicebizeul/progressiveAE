@@ -133,7 +133,7 @@ class PGVAE:
 
             with writer.as_default():
                 tf.summary.scalar("train_loss", train_loss, step=epoch)
-                tf.summary.scalagitr("test_loss", test_loss, step=epoch)
+                tf.summary.scalar("test_loss", test_loss, step=epoch)
             writer.flush()
 
             # save results
